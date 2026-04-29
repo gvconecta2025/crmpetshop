@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM Pet Shops</title>
-    <!-- Tailwind CSS para o Design -->
+    <!-- Tailwind CSS para o Design (Links Corrigidos e Limpos) -->
     <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <!-- React -->
+    <!-- React (Links Corrigidos e Limpos) -->
     <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
     <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
     <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
@@ -17,7 +17,8 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js)";
+        // Importações do Firebase (Links Corrigidos e Limpos)
+        import { initializeApp, getApps, getApp } from "[https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js)";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc } from "[https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js)";
 
         // ==========================================
@@ -32,6 +33,10 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
+        // INICIALIZAÇÃO SEGURA DO FIREBASE (FORA DO COMPONENTE PARA EVITAR CRASHES)
+        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        const db = getFirestore(app);
+
         const { useState, useEffect } = React;
 
         // Ícones do sistema
@@ -44,28 +49,6 @@
         };
 
         function App() {
-            // Proteção contra ecrã branco: Verifica se configurou as chaves
-            if (firebaseConfig.apiKey === "SUA_API_KEY") {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-red-50 p-6">
-                        <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg text-center border-t-4 border-red-500">
-                            <h1 className="text-2xl font-bold text-red-600 mb-4">Quase lá! Faltam as Chaves do Firebase 🔑</h1>
-                            <p className="text-slate-700 mb-4">Para que a tela não fique em branco, precisa de ligar o seu projeto à base de dados.</p>
-                            <p className="text-slate-600 text-sm bg-slate-100 p-3 rounded">Vá ao seu ficheiro <code>index.html</code> no GitHub e substitua <strong>"SUA_API_KEY"</strong> e os restantes valores pelas chaves reais do seu projeto Firebase (linha 28 do código).</p>
-                        </div>
-                    </div>
-                );
-            }
-
-            // Iniciar Firebase de forma segura
-            let app, db;
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-            } catch (error) {
-                console.error("Erro a iniciar o Firebase:", error);
-            }
-
             const [leads, setLeads] = useState([]);
             const [columns] = useState([
                 { id: 'col-1', title: 'Novos Leads' },
@@ -83,6 +66,8 @@
                     const fetchedLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     fetchedLeads.sort((a, b) => b.createdAt - a.createdAt);
                     setLeads(fetchedLeads);
+                }, (error) => {
+                    console.error("Erro ao procurar leads. Verifique as Regras do Firebase.", error);
                 });
                 return () => unsubscribe();
             }, []);
@@ -177,7 +162,7 @@
                             </div>
                             <div className="w-full md:w-1/3 flex flex-col justify-center">
                                 <form onSubmit={handleManualAdd} className="flex gap-2">
-                                    <input type="text" value={newLeadText} onChange={(e) => setNewLeadText(e.target.value)} placeholder="Nome do Pet Shop..." className="flex-1 border border-slate-300 rounded-lg px-4 py-2" />
+                                    <input type="text" value={newLeadText} onChange={(e) => setNewLeadText(e.target.value)} placeholder="Nome do Pet Shop..." className="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                                     <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"><Icons.Plus /></button>
                                 </form>
                             </div>
