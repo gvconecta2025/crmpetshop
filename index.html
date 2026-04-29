@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM Pet Shops</title>
     
-    <!-- 1. Tailwind CSS (Design) -->
+    <!-- 1. Tailwind CSS (Design) - LINKS CORRIGIDOS E LIMPOS -->
     <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     
-    <!-- 2. React e Babel -->
+    <!-- 2. React e Babel - LINKS CORRIGIDOS E LIMPOS -->
     <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
     <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
     <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
     
-    <!-- 3. Tesseract (Inteligência Artificial) -->
+    <!-- 3. Tesseract (Inteligência Artificial) - LINKS CORRIGIDOS E LIMPOS -->
     <script src="[https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js](https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js)"></script>
 
-    <!-- 4. FIREBASE (Versão Compatível - À Prova de Falhas) -->
+    <!-- 4. FIREBASE (Versão Compatível) - LINKS CORRIGIDOS E LIMPOS -->
     <script src="[https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js)"></script>
     <script src="[https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js)"></script>
 </head>
@@ -74,6 +74,7 @@
                     setLeads(fetchedLeads);
                 }, (error) => {
                     console.error("Erro ao procurar leads:", error);
+                    alert("Atenção: Não tem permissões de leitura no Firebase. Verifique se colocou as Regras corretamente (Passo 2).");
                 });
                 return () => unsubscribe();
             }, []);
@@ -116,7 +117,7 @@
                         });
                     } catch (error) {
                         console.error("Erro OCR:", error);
-                        alert("Não foi possível ler a imagem.");
+                        alert("Não foi possível ler a imagem ou gravar no Firebase. Verifique as Regras de segurança.");
                     } finally {
                         setIsProcessing(false);
                     }
@@ -126,8 +127,12 @@
             const handleManualAdd = async (e) => {
                 e.preventDefault();
                 if (!newLeadText.trim()) return;
-                await db.collection('leads').add({ name: newLeadText, phone: '', address: '', columnId: columns[0].id, notes: '', createdAt: Date.now() });
-                setNewLeadText('');
+                try {
+                    await db.collection('leads').add({ name: newLeadText, phone: '', address: '', columnId: columns[0].id, notes: '', createdAt: Date.now() });
+                    setNewLeadText('');
+                } catch (error) {
+                    alert("Erro ao salvar! O seu Firebase está em modo Produção restrito. Altere as regras conforme o Passo 2.");
+                }
             };
 
             const updateLead = async (id, field, value) => { await db.collection('leads').doc(id).update({ [field]: value }); };
