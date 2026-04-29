@@ -5,29 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRM Pet Shops</title>
     
-    <!-- 1. Tailwind CSS (Design) - LINKS CORRIGIDOS E LIMPOS -->
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <!-- 1. Tailwind CSS (Design) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. React e Babel - LINKS CORRIGIDOS E LIMPOS -->
-    <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
-    <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
-    <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
-    
-    <!-- 3. Tesseract (Inteligência Artificial) - LINKS CORRIGIDOS E LIMPOS -->
-    <script src="[https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js](https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js)"></script>
+    <!-- 2. Tesseract (Inteligência Artificial OCR) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-    <!-- 4. FIREBASE (Versão Compatível) - LINKS CORRIGIDOS E LIMPOS -->
-    <script src="[https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js)"></script>
+    <!-- 3. FIREBASE (Versão Compatível/Clássica) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <!-- Ícones (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* Estilos base e animações */
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .kanban-col { min-width: 320px; }
+        .card-ghost { opacity: 0.5; background-color: #e2e8f0; }
+        .textarea-notes { resize: vertical; min-height: 60px; }
+    </style>
 </head>
-<body class="bg-slate-100">
-    <div id="root"></div>
+<body class="flex flex-col h-screen overflow-hidden">
 
-    <!-- Script principal sem 'data-type="module"' para evitar conflitos no navegador -->
-    <script type="text/babel">
-        
+    <!-- Cabeçalho e Área de Inserção -->
+    <div class="p-6 pb-2 shrink-0">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops</h1>
+            
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Zona de Colagem (Paste) -->
+                <div id="pasteZone" class="flex-1 border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-text outline-none hover:border-blue-400 focus:border-blue-500 focus:bg-white" tabindex="0">
+                    <div id="pasteInitialState" class="flex flex-col items-center">
+                        <div class="bg-white p-3 rounded-full shadow-sm mb-3">
+                            <i class="fa-regular fa-image text-2xl text-slate-400"></i>
+                        </div>
+                        <p class="text-slate-700 font-semibold text-lg">Área de Captura Rápida</p>
+                        <p class="text-slate-500 mt-1 text-center text-sm">Clique aqui e faça <kbd class="bg-slate-200 px-2 py-1 rounded font-mono text-xs">Ctrl + V</kbd></p>
+                    </div>
+                    
+                    <div id="pasteProcessingState" class="hidden flex-col items-center">
+                        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-3"></i>
+                        <p class="text-blue-700 font-medium">A extrair dados da imagem... ⏳</p>
+                    </div>
+                </div>
+
+                <!-- Adição Manual -->
+                <div class="w-full md:w-1/3 flex flex-col justify-center">
+                    <form id="manualForm" class="flex gap-2">
+                        <input type="text" id="manualName" placeholder="Nome do Pet Shop..." class="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                        <button type="submit" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition" title="Adicionar">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quadro Kanban -->
+    <div class="flex-1 overflow-x-auto p-6 pt-2">
+        <div class="flex gap-6 h-full" id="kanbanBoard">
+            <!-- As colunas serão injetadas aqui pelo JavaScript -->
+        </div>
+    </div>
+
+    <script>
         // ==========================================
-        // CHAVES DO FIREBASE CONFIGURADAS
+        // 1. CONFIGURAÇÃO DO FIREBASE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -38,189 +83,339 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
-        // INICIALIZAÇÃO SEGURA DO FIREBASE
+        // Inicializar Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
 
-        const { useState, useEffect } = React;
+        // ==========================================
+        // 2. ESTADO DA APLICAÇÃO E VARIÁVEIS GLOBAIS
+        // ==========================================
+        const columns = [
+            { id: 'col-1', title: 'Novos Leads' },
+            { id: 'col-2', title: 'Em Contato' },
+            { id: 'col-3', title: 'Apresentação' },
+            { id: 'col-4', title: 'Fechado' }
+        ];
+        
+        let leadsData = []; // Armazena os dados vindos do Firebase
+        let draggedLeadId = null;
 
-        // Ícones do sistema
-        const Icons = {
-            Plus: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-            Image: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
-            Message: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"></path></svg>,
-            Grip: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>,
-            Trash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
-        };
+        // Elementos do DOM
+        const boardEl = document.getElementById('kanbanBoard');
+        const pasteZone = document.getElementById('pasteZone');
+        const pasteInitial = document.getElementById('pasteInitialState');
+        const pasteProcessing = document.getElementById('pasteProcessingState');
+        const manualForm = document.getElementById('manualForm');
 
-        function App() {
-            const [leads, setLeads] = useState([]);
-            const [columns] = useState([
-                { id: 'col-1', title: 'Novos Leads' },
-                { id: 'col-2', title: 'Em Contato' },
-                { id: 'col-3', title: 'Apresentação' },
-                { id: 'col-4', title: 'Fechado' }
-            ]);
-            const [isProcessing, setIsProcessing] = useState(false);
-            const [newLeadText, setNewLeadText] = useState('');
+        // ==========================================
+        // 3. RENDERIZAÇÃO E LIGAÇÃO AO FIREBASE
+        // ==========================================
+        
+        // Listener em tempo real do Firebase
+        db.collection('leads').onSnapshot((snapshot) => {
+            leadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Ordenar por data de criação (mais recentes primeiro)
+            leadsData.sort((a, b) => b.createdAt - a.createdAt);
+            renderBoard();
+        }, (error) => {
+            console.error("Erro Firebase:", error);
+            alert("Atenção: Não tem permissões de leitura. Verifique as regras do Firebase.");
+        });
 
-            // Ligação ao Firebase em tempo real (Sintaxe Compatível)
-            useEffect(() => {
-                const unsubscribe = db.collection('leads').onSnapshot((snapshot) => {
-                    const fetchedLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    fetchedLeads.sort((a, b) => b.createdAt - a.createdAt);
-                    setLeads(fetchedLeads);
-                }, (error) => {
-                    console.error("Erro ao procurar leads:", error);
-                    alert("Atenção: Não tem permissões de leitura no Firebase. Verifique se colocou as Regras corretamente (Passo 2).");
+        function renderBoard() {
+            boardEl.innerHTML = ''; // Limpar o quadro
+            
+            columns.forEach(col => {
+                // Criar Coluna
+                const colEl = document.createElement('div');
+                colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-full overflow-hidden shrink-0';
+                colEl.dataset.colId = col.id;
+                
+                // Eventos de Drop na Coluna
+                colEl.addEventListener('dragover', handleDragOver);
+                colEl.addEventListener('drop', handleDrop);
+
+                // Filtrar leads para esta coluna
+                const colLeads = leadsData.filter(l => l.columnId === col.id);
+
+                // Cabeçalho da Coluna
+                colEl.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <h2 class="font-bold text-slate-700">${col.title}</h2>
+                        <span class="bg-slate-300 text-slate-600 text-xs py-0.5 px-2 rounded-full font-medium">${colLeads.length}</span>
+                    </div>
+                `;
+
+                // Contentor de Cartões (scrollable)
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'flex-1 overflow-y-auto space-y-3 pb-2 pr-1';
+
+                if (colLeads.length === 0) {
+                    cardsContainer.innerHTML = `
+                        <div class="h-24 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">
+                            Arraste leads para aqui
+                        </div>
+                    `;
+                }
+
+                // Renderizar cada Cartão
+                colLeads.forEach(lead => {
+                    const cardEl = createCardElement(lead);
+                    cardsContainer.appendChild(cardEl);
                 });
-                return () => unsubscribe();
-            }, []);
 
-            const handlePaste = async (e) => {
-                const items = e.clipboardData.items;
-                let imageFile = null;
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].type.indexOf('image') !== -1) {
-                        imageFile = items[i].getAsFile();
-                        break;
-                    }
-                }
-
-                if (imageFile) {
-                    e.preventDefault();
-                    setIsProcessing(true);
-                    try {
-                        const result = await window.Tesseract.recognize(imageFile, 'por');
-                        const text = result.data.text;
-                        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                        
-                        let name = "Novo Lead";
-                        let address = "";
-                        let phone = "";
-
-                        const phoneMatch = text.match(/(?:\(\d{2}\)\s?)?\d{4,5}-\d{4}/);
-                        if (phoneMatch) phone = phoneMatch[0];
-
-                        if (lines.length > 0) {
-                            if (lines[0].toLowerCase().includes('pet shop') && lines.length > 1) name = lines[1];
-                            else name = lines[0];
-                        }
-
-                        const addressLine = lines.find(l => l.toLowerCase().includes('rua') || l.toLowerCase().includes('avenida') || l.toLowerCase().includes('praça') || l.toLowerCase().includes('centro'));
-                        if (addressLine) address = addressLine;
-
-                        await db.collection('leads').add({
-                            name, phone, address, rawText: text, columnId: columns[0].id, notes: '', createdAt: Date.now()
-                        });
-                    } catch (error) {
-                        console.error("Erro OCR:", error);
-                        alert("Não foi possível ler a imagem ou gravar no Firebase. Verifique as Regras de segurança.");
-                    } finally {
-                        setIsProcessing(false);
-                    }
-                }
-            };
-
-            const handleManualAdd = async (e) => {
-                e.preventDefault();
-                if (!newLeadText.trim()) return;
-                try {
-                    await db.collection('leads').add({ name: newLeadText, phone: '', address: '', columnId: columns[0].id, notes: '', createdAt: Date.now() });
-                    setNewLeadText('');
-                } catch (error) {
-                    alert("Erro ao salvar! O seu Firebase está em modo Produção restrito. Altere as regras conforme o Passo 2.");
-                }
-            };
-
-            const updateLead = async (id, field, value) => { await db.collection('leads').doc(id).update({ [field]: value }); };
-            const deleteLead = async (id) => { if (window.confirm('Eliminar Lead?')) await db.collection('leads').doc(id).delete(); };
-
-            const onDragStart = (e, id) => e.dataTransfer.setData('leadId', id);
-            const onDragOver = (e) => e.preventDefault();
-            const onDrop = async (e, columnId) => {
-                const leadId = e.dataTransfer.getData('leadId');
-                if (leadId) await updateLead(leadId, 'columnId', columnId);
-            };
-
-            const openWhatsApp = (phone) => {
-                if (!phone) return;
-                let cleanPhone = phone.replace(/\D/g, '');
-                if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
-                window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}`, '_blank');
-            };
-
-            return (
-                <div className="min-h-screen p-6 font-sans flex flex-col">
-                    <div className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <h1 className="text-2xl font-bold text-slate-800 mb-4">CRM Pet Shops</h1>
-                        <div className="flex flex-col md:flex-row gap-6">
-                            <div 
-                                className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-text outline-none ${isProcessing ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-300'}`}
-                                onPaste={handlePaste} tabIndex={0}
-                            >
-                                {isProcessing ? (
-                                    <p className="text-blue-700 font-medium">A extrair dados da imagem... ⏳</p>
-                                ) : (
-                                    <>
-                                        <div className="bg-white p-3 rounded-full shadow-sm mb-3"><Icons.Image /></div>
-                                        <p className="text-slate-700 font-semibold text-lg">Área de Captura Rápida</p>
-                                        <p className="text-slate-500 mt-1 text-center text-sm">Clique aqui e faça <kbd className="bg-slate-200 px-2 py-1 rounded font-mono">Ctrl + V</kbd></p>
-                                    </>
-                                )}
-                            </div>
-                            <div className="w-full md:w-1/3 flex flex-col justify-center">
-                                <form onSubmit={handleManualAdd} className="flex gap-2">
-                                    <input type="text" value={newLeadText} onChange={(e) => setNewLeadText(e.target.value)} placeholder="Nome do Pet Shop..." className="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-                                    <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"><Icons.Plus /></button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-x-auto pb-6">
-                        <div className="flex gap-6 min-w-max h-full">
-                            {columns.map(column => (
-                                <div key={column.id} className="w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200" onDragOver={onDragOver} onDrop={(e) => onDrop(e, column.id)}>
-                                    <h2 className="font-bold text-slate-700 mb-4 px-1">{column.title} <span className="bg-slate-300 text-slate-600 text-xs py-0.5 px-2 rounded-full">{leads.filter(l => l.columnId === column.id).length}</span></h2>
-                                    <div className="flex-1 overflow-y-auto space-y-3 min-h-[150px]">
-                                        {leads.filter(l => l.columnId === column.id).map(lead => (
-                                            <div key={lead.id} draggable onDragStart={(e) => onDragStart(e, lead.id)} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 cursor-grab hover:shadow-md transition">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div className="flex items-center gap-2 w-[85%]">
-                                                        <span className="text-slate-300"><Icons.Grip /></span>
-                                                        <input type="text" value={lead.name} onChange={(e) => updateLead(lead.id, 'name', e.target.value)} className="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded" />
-                                                    </div>
-                                                    <button onClick={() => deleteLead(lead.id)} className="text-slate-300 hover:text-red-500 transition"><Icons.Trash /></button>
-                                                </div>
-                                                <div className="space-y-2 mb-4">
-                                                    <input type="text" value={lead.phone} onChange={(e) => updateLead(lead.id, 'phone', e.target.value)} placeholder="Telefone..." className="w-full text-sm text-slate-600 bg-transparent focus:outline-none border-b border-slate-100 px-1 focus:border-slate-300" />
-                                                    <input type="text" value={lead.address} onChange={(e) => updateLead(lead.id, 'address', e.target.value)} placeholder="Endereço..." className="w-full text-xs text-slate-500 bg-transparent focus:outline-none border-b border-slate-100 px-1 focus:border-slate-300" />
-                                                </div>
-                                                <textarea value={lead.notes || ''} onChange={(e) => updateLead(lead.id, 'notes', e.target.value)} placeholder="+ Inserir observações..." className="w-full text-sm bg-yellow-50/50 border border-yellow-200/60 rounded-lg p-2 min-h-[60px] focus:outline-none focus:ring-1 focus:ring-yellow-400" />
-                                                <button onClick={() => openWhatsApp(lead.phone)} disabled={!lead.phone} className="mt-3 w-full bg-[#25D366] disabled:bg-slate-300 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-[#1da851] transition">
-                                                    <Icons.Message /> Conversar
-                                                </button>
-                                            </div>
-                                        ))}
-                                        {leads.filter(l => l.columnId === column.id).length === 0 && (
-                                            <div className="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">
-                                                Arraste os leads para aqui
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
+                colEl.appendChild(cardsContainer);
+                boardEl.appendChild(colEl);
+            });
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function createCardElement(lead) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl p-4 shadow-sm border border-slate-200 cursor-grab hover:shadow-md transition-all group relative';
+            card.draggable = true;
+            card.dataset.leadId = lead.id;
+
+            // Eventos de Drag and Drop no Cartão
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+
+            card.innerHTML = `
+                <!-- Cabeçalho do Cartão -->
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-2 w-[85%]">
+                        <i class="fa-solid fa-grip-vertical text-slate-300 cursor-grab"></i>
+                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded lead-name-input" value="${lead.name}" title="Editar Nome">
+                    </div>
+                    <button class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity delete-btn" title="Eliminar">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                </div>
+
+                <!-- Dados de Contato -->
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 transition-colors">
+                        <i class="fa-solid fa-phone text-xs text-slate-400 mr-2"></i>
+                        <input type="text" class="w-full text-sm text-slate-600 bg-transparent focus:outline-none lead-phone-input" value="${lead.phone || ''}" placeholder="(00) 0000-0000">
+                    </div>
+                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 transition-colors">
+                        <i class="fa-solid fa-location-dot text-xs text-slate-400 mr-2"></i>
+                        <input type="text" class="w-full text-xs text-slate-500 bg-transparent focus:outline-none lead-address-input" value="${lead.address || ''}" placeholder="Endereço...">
+                    </div>
+                </div>
+
+                <!-- Notas -->
+                <textarea class="w-full text-sm bg-amber-50/50 border border-amber-200/60 rounded-lg p-2 min-h-[60px] focus:outline-none focus:ring-1 focus:ring-amber-400 textarea-notes placeholder-slate-400 lead-notes-input" placeholder="+ Adicionar observações...">${lead.notes || ''}</textarea>
+
+                <!-- Botão WhatsApp -->
+                <button class="mt-3 w-full ${lead.phone ? 'bg-[#25D366] hover:bg-[#1da851] text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors whatsapp-btn">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Conversar
+                </button>
+            `;
+
+            // Ligar Eventos de Edição (Auto-save)
+            const nameInput = card.querySelector('.lead-name-input');
+            const phoneInput = card.querySelector('.lead-phone-input');
+            const addressInput = card.querySelector('.lead-address-input');
+            const notesInput = card.querySelector('.lead-notes-input');
+            
+            // Grava no Firebase quando o utilizador tira o foco (blur) do campo
+            nameInput.addEventListener('blur', (e) => updateLead(lead.id, 'name', e.target.value));
+            phoneInput.addEventListener('blur', (e) => {
+                updateLead(lead.id, 'phone', e.target.value);
+                // Força re-render para atualizar o estado do botão WhatsApp
+                const updatedLead = leadsData.find(l => l.id === lead.id);
+                if(updatedLead) { updatedLead.phone = e.target.value; renderBoard(); }
+            });
+            addressInput.addEventListener('blur', (e) => updateLead(lead.id, 'address', e.target.value));
+            notesInput.addEventListener('blur', (e) => updateLead(lead.id, 'notes', e.target.value));
+
+            // Botão Eliminar
+            card.querySelector('.delete-btn').addEventListener('click', () => {
+                if(confirm(`Tem a certeza que deseja eliminar "${lead.name}"?`)) {
+                    deleteLead(lead.id);
+                }
+            });
+
+            // Botão WhatsApp
+            const wppBtn = card.querySelector('.whatsapp-btn');
+            wppBtn.addEventListener('click', () => {
+                if(!lead.phone) return;
+                let cleanPhone = lead.phone.replace(/\D/g, '');
+                if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
+                window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}`, '_blank');
+            });
+
+            return card;
+        }
+
+        // ==========================================
+        // 4. LÓGICA DE DRAG AND DROP (Vanilla JS)
+        // ==========================================
+        function handleDragStart(e) {
+            draggedLeadId = this.dataset.leadId;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.leadId); // Necessário para Firefox
+            setTimeout(() => this.classList.add('card-ghost'), 0);
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('card-ghost');
+            draggedLeadId = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessário para permitir o "drop"
+            e.dataTransfer.dropEffect = 'move';
+            
+            // Feedback visual subtil na coluna de destino
+            this.classList.add('bg-slate-300/40');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('bg-slate-300/40'); // Remove feedback visual
+            
+            const targetColId = this.dataset.colId;
+            if (draggedLeadId && targetColId) {
+                // Verificar se a coluna mudou
+                const lead = leadsData.find(l => l.id === draggedLeadId);
+                if(lead && lead.columnId !== targetColId) {
+                    updateLead(draggedLeadId, 'columnId', targetColId);
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. OPERAÇÕES FIREBASE (CRUD)
+        // ==========================================
+        async function addLead(data) {
+            try {
+                await db.collection('leads').add({
+                    ...data,
+                    columnId: columns[0].id,
+                    notes: '',
+                    createdAt: Date.now()
+                });
+            } catch (error) {
+                console.error("Erro ao adicionar:", error);
+                alert("Erro ao gravar. Verifique as regras do Firebase.");
+            }
+        }
+
+        async function updateLead(id, field, value) {
+            try {
+                await db.collection('leads').doc(id).update({ [field]: value });
+            } catch (error) {
+                console.error("Erro ao atualizar:", error);
+            }
+        }
+
+        async function deleteLead(id) {
+            try {
+                await db.collection('leads').doc(id).delete();
+            } catch (error) {
+                console.error("Erro ao eliminar:", error);
+            }
+        }
+
+        // ==========================================
+        // 6. PROCESSAMENTO DE IMAGEM E EVENTOS
+        // ==========================================
+        
+        // Adição Manual
+        manualForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('manualName');
+            if (nameInput.value.trim() !== '') {
+                addLead({ name: nameInput.value.trim(), phone: '', address: '' });
+                nameInput.value = '';
+            }
+        });
+
+        // Eventos da Área de Colagem
+        pasteZone.addEventListener('paste', async (e) => {
+            const items = e.clipboardData.items;
+            let imageFile = null;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    imageFile = items[i].getAsFile();
+                    break;
+                }
+            }
+
+            if (imageFile) {
+                e.preventDefault();
+                setProcessingState(true);
+
+                try {
+                    // Executar IA do Tesseract
+                    const result = await Tesseract.recognize(imageFile, 'por');
+                    const text = result.data.text;
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    
+                    let name = "Novo Lead";
+                    let address = "";
+                    let phone = "";
+
+                    // Lógica Básica de Extração (RegExp)
+                    const phoneMatch = text.match(/(?:\(\d{2}\)\s?)?\d{4,5}-\d{4}/);
+                    if (phoneMatch) phone = phoneMatch[0];
+
+                    if (lines.length > 0) {
+                        // Ignorar "Pet Shop" genérico na primeira linha
+                        if (lines[0].toLowerCase().includes('pet shop') && lines.length > 1) {
+                            name = lines[1];
+                        } else {
+                            name = lines[0];
+                        }
+                    }
+
+                    const addressLine = lines.find(l => 
+                        l.toLowerCase().includes('rua') || 
+                        l.toLowerCase().includes('avenida') || 
+                        l.toLowerCase().includes('praça') || 
+                        l.toLowerCase().includes('centro')
+                    );
+                    if (addressLine) address = addressLine;
+
+                    // Gravar no Firebase
+                    await addLead({ name, phone, address, rawText: text });
+
+                } catch (error) {
+                    console.error("Erro no OCR:", error);
+                    alert("A IA não conseguiu ler a imagem. Tente de novo ou insira manualmente.");
+                } finally {
+                    setProcessingState(false);
+                }
+            }
+        });
+
+        // Limpar feedback visual das colunas se o drag sair do quadro
+        document.addEventListener('dragover', (e) => {
+            if (!e.target.closest('.kanban-col')) {
+                document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('bg-slate-300/40'));
+            }
+        });
+
+        function setProcessingState(isProcessing) {
+            if (isProcessing) {
+                pasteInitial.classList.add('hidden');
+                pasteProcessing.classList.remove('hidden');
+                pasteProcessing.classList.add('flex');
+                pasteZone.classList.add('bg-blue-50', 'border-blue-300');
+                pasteZone.classList.remove('bg-slate-50', 'border-slate-300');
+            } else {
+                pasteInitial.classList.remove('hidden');
+                pasteProcessing.classList.add('hidden');
+                pasteProcessing.classList.remove('flex');
+                pasteZone.classList.remove('bg-blue-50', 'border-blue-300');
+                pasteZone.classList.add('bg-slate-50', 'border-slate-300');
+            }
+        }
+
     </script>
 </body>
 </html>
