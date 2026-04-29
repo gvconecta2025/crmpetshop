@@ -3,38 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops</title>
+    <title>CRM Pet Shops - Pro Version</title>
     
-    <!-- 1. Tailwind CSS (Design) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. Tesseract (Inteligência Artificial OCR) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-    <!-- 3. FIREBASE (Versão Compatível/Clássica) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
-    <!-- Ícones (FontAwesome) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* Estilos base e animações */
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .kanban-col { min-width: 320px; }
         .card-ghost { opacity: 0.5; background-color: #e2e8f0; }
-        .textarea-notes { resize: vertical; min-height: 60px; }
+        .history-item { border-left: 2px solid #e2e8f0; padding-left: 10px; margin-bottom: 10px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <!-- Cabeçalho e Área de Inserção -->
     <div class="p-6 pb-2 shrink-0">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h1 class="text-2xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops</h1>
+            <h1 class="text-2xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">v2.0 - Histórico Ativo</span></h1>
             
             <div class="flex flex-col md:flex-row gap-6">
-                <!-- Zona de Colagem (Paste) -->
                 <div id="pasteZone" class="flex-1 border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-text outline-none hover:border-blue-400 focus:border-blue-500 focus:bg-white" tabindex="0">
                     <div id="pasteInitialState" class="flex flex-col items-center">
                         <div class="bg-white p-3 rounded-full shadow-sm mb-3">
@@ -50,7 +46,6 @@
                     </div>
                 </div>
 
-                <!-- Adição Manual -->
                 <div class="w-full md:w-1/3 flex flex-col justify-center">
                     <form id="manualForm" class="flex gap-2">
                         <input type="text" id="manualName" placeholder="Nome do Pet Shop..." class="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
@@ -63,17 +58,13 @@
         </div>
     </div>
 
-    <!-- Quadro Kanban -->
     <div class="flex-1 overflow-x-auto p-6 pt-2">
         <div class="flex gap-6 h-full" id="kanbanBoard">
-            <!-- As colunas serão injetadas aqui pelo JavaScript -->
-        </div>
+            </div>
     </div>
 
     <script>
-        // ==========================================
-        // 1. CONFIGURAÇÃO DO FIREBASE
-        // ==========================================
+        // 1. CONFIGURAÇÃO FIREBASE (SUAS CHAVES)
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -83,15 +74,10 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
-        // Inicializar Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ==========================================
-        // 2. ESTADO DA APLICAÇÃO E VARIÁVEIS GLOBAIS
-        // ==========================================
+        // 2. ESTADO
         const columns = [
             { id: 'col-1', title: 'Novos Leads' },
             { id: 'col-2', title: 'Em Contato' },
@@ -99,48 +85,34 @@
             { id: 'col-4', title: 'Fechado' }
         ];
         
-        let leadsData = []; // Armazena os dados vindos do Firebase
+        let leadsData = [];
         let draggedLeadId = null;
+        let expandedLeads = new Set(); // Guarda quais cards estão abertos
 
-        // Elementos do DOM
         const boardEl = document.getElementById('kanbanBoard');
         const pasteZone = document.getElementById('pasteZone');
         const pasteInitial = document.getElementById('pasteInitialState');
         const pasteProcessing = document.getElementById('pasteProcessingState');
         const manualForm = document.getElementById('manualForm');
 
-        // ==========================================
-        // 3. RENDERIZAÇÃO E LIGAÇÃO AO FIREBASE
-        // ==========================================
-        
-        // Listener em tempo real do Firebase
+        // 3. LISTENERS
         db.collection('leads').onSnapshot((snapshot) => {
             leadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Ordenar por data de criação (mais recentes primeiro)
             leadsData.sort((a, b) => b.createdAt - a.createdAt);
             renderBoard();
-        }, (error) => {
-            console.error("Erro Firebase:", error);
-            alert("Atenção: Não tem permissões de leitura. Verifique as regras do Firebase.");
         });
 
         function renderBoard() {
-            boardEl.innerHTML = ''; // Limpar o quadro
-            
+            boardEl.innerHTML = '';
             columns.forEach(col => {
-                // Criar Coluna
                 const colEl = document.createElement('div');
                 colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-full overflow-hidden shrink-0';
                 colEl.dataset.colId = col.id;
-                
-                // Eventos de Drop na Coluna
-                colEl.addEventListener('dragover', handleDragOver);
+                colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.classList.add('bg-slate-300/40'); });
+                colEl.addEventListener('dragleave', () => colEl.classList.remove('bg-slate-300/40'));
                 colEl.addEventListener('drop', handleDrop);
 
-                // Filtrar leads para esta coluna
                 const colLeads = leadsData.filter(l => l.columnId === col.id);
-
-                // Cabeçalho da Coluna
                 colEl.innerHTML = `
                     <div class="flex justify-between items-center mb-4 px-1">
                         <h2 class="font-bold text-slate-700">${col.title}</h2>
@@ -148,274 +120,178 @@
                     </div>
                 `;
 
-                // Contentor de Cartões (scrollable)
-                const cardsContainer = document.createElement('div');
-                cardsContainer.className = 'flex-1 overflow-y-auto space-y-3 pb-2 pr-1';
-
-                if (colLeads.length === 0) {
-                    cardsContainer.innerHTML = `
-                        <div class="h-24 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">
-                            Arraste leads para aqui
-                        </div>
-                    `;
-                }
-
-                // Renderizar cada Cartão
-                colLeads.forEach(lead => {
-                    const cardEl = createCardElement(lead);
-                    cardsContainer.appendChild(cardEl);
-                });
-
-                colEl.appendChild(cardsContainer);
+                const container = document.createElement('div');
+                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-2 pr-1';
+                colLeads.forEach(lead => container.appendChild(createCard(lead)));
+                
+                colEl.appendChild(container);
                 boardEl.appendChild(colEl);
             });
         }
 
-        function createCardElement(lead) {
+        function createCard(lead) {
+            const isExpanded = expandedLeads.has(lead.id);
             const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl p-4 shadow-sm border border-slate-200 cursor-grab hover:shadow-md transition-all group relative';
+            card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group`;
             card.draggable = true;
             card.dataset.leadId = lead.id;
 
-            // Eventos de Drag and Drop no Cartão
-            card.addEventListener('dragstart', handleDragStart);
-            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragstart', function(e) {
+                draggedLeadId = this.dataset.leadId;
+                setTimeout(() => this.classList.add('card-ghost'), 0);
+            });
+            card.addEventListener('dragend', function() { this.classList.remove('card-ghost'); draggedLeadId = null; });
+
+            // Formatação de Datas
+            const formatDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '-';
+            const formatTime = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
 
             card.innerHTML = `
-                <!-- Cabeçalho do Cartão -->
                 <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center gap-2 w-[85%]">
-                        <i class="fa-solid fa-grip-vertical text-slate-300 cursor-grab"></i>
-                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded lead-name-input" value="${lead.name}" title="Editar Nome">
+                    <div class="flex items-center gap-2 w-[70%]">
+                        <i class="fa-solid fa-grip-vertical text-slate-300"></i>
+                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded edit-name" value="${lead.name}">
                     </div>
-                    <button class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity delete-btn" title="Eliminar">
-                        <i class="fa-regular fa-trash-can"></i>
-                    </button>
-                </div>
-
-                <!-- Dados de Contato -->
-                <div class="space-y-2 mb-4">
-                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 transition-colors">
-                        <i class="fa-solid fa-phone text-xs text-slate-400 mr-2"></i>
-                        <input type="text" class="w-full text-sm text-slate-600 bg-transparent focus:outline-none lead-phone-input" value="${lead.phone || ''}" placeholder="(00) 0000-0000">
-                    </div>
-                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 transition-colors">
-                        <i class="fa-solid fa-location-dot text-xs text-slate-400 mr-2"></i>
-                        <input type="text" class="w-full text-xs text-slate-500 bg-transparent focus:outline-none lead-address-input" value="${lead.address || ''}" placeholder="Endereço...">
+                    <div class="flex gap-2">
+                        <button class="text-slate-400 hover:text-blue-600 transition toggle-expand" title="Ver Histórico">
+                            <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-clock-rotate-left'}"></i>
+                        </button>
+                        <button class="text-slate-300 hover:text-red-500 delete-btn"><i class="fa-regular fa-trash-can"></i></button>
                     </div>
                 </div>
 
-                <!-- Notas -->
-                <textarea class="w-full text-sm bg-amber-50/50 border border-amber-200/60 rounded-lg p-2 min-h-[60px] focus:outline-none focus:ring-1 focus:ring-amber-400 textarea-notes placeholder-slate-400 lead-notes-input" placeholder="+ Adicionar observações...">${lead.notes || ''}</textarea>
+                <div class="space-y-2 mb-3">
+                    <div class="flex items-center text-sm text-slate-600"><i class="fa-solid fa-phone w-5 text-slate-400"></i>
+                        <input type="text" class="bg-transparent w-full focus:outline-none edit-phone" value="${lead.phone || ''}" placeholder="Telefone">
+                    </div>
+                    <div class="flex items-center text-xs text-slate-500"><i class="fa-solid fa-location-dot w-5 text-slate-400"></i>
+                        <input type="text" class="bg-transparent w-full focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço">
+                    </div>
+                </div>
 
-                <!-- Botão WhatsApp -->
-                <button class="mt-3 w-full ${lead.phone ? 'bg-[#25D366] hover:bg-[#1da851] text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors whatsapp-btn">
-                    <i class="fa-brands fa-whatsapp text-lg"></i> Conversar
+                <div class="${isExpanded ? 'block' : 'hidden'} mt-4 pt-4 border-t border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">Histórico de Observações</p>
+                    
+                    <div class="max-h-40 overflow-y-auto custom-scrollbar mb-3 space-y-3">
+                        ${(lead.history || []).length > 0 ? lead.history.map((h, index) => `
+                            <div class="history-item text-xs">
+                                <textarea class="w-full bg-slate-50 border-none focus:ring-0 p-1 rounded edit-history-item" data-index="${index}">${h.text}</textarea>
+                                <div class="flex justify-between text-[9px] text-slate-400 mt-1 italic">
+                                    <span>Criado: ${formatDate(h.createdAt)} ${formatTime(h.createdAt)}</span>
+                                    ${h.updatedAt ? `<span>Editado: ${formatDate(h.updatedAt)}</span>` : ''}
+                                </div>
+                            </div>
+                        `).join('') : '<p class="text-xs text-slate-400 italic">Sem observações ainda.</p>'}
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="text" class="flex-1 text-xs border border-slate-200 rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none new-note-input" placeholder="Nova nota...">
+                        <button class="bg-slate-800 text-white px-3 py-1 rounded text-xs hover:bg-slate-900 add-note-btn"><i class="fa-solid fa-check"></i></button>
+                    </div>
+                </div>
+
+                <button class="mt-3 w-full ${lead.phone ? 'bg-[#25D366]' : 'bg-slate-200 text-slate-400'} py-2 rounded-lg font-medium flex items-center justify-center gap-2 whatsapp-btn text-sm">
+                    <i class="fa-brands fa-whatsapp"></i> Conversar
                 </button>
             `;
 
-            // Ligar Eventos de Edição (Auto-save)
-            const nameInput = card.querySelector('.lead-name-input');
-            const phoneInput = card.querySelector('.lead-phone-input');
-            const addressInput = card.querySelector('.lead-address-input');
-            const notesInput = card.querySelector('.lead-notes-input');
+            // EVENTOS DO CARD
+            card.querySelector('.toggle-expand').onclick = () => {
+                if (isExpanded) expandedLeads.delete(lead.id);
+                else expandedLeads.add(lead.id);
+                renderBoard();
+            };
+
+            card.querySelector('.edit-name').onblur = (e) => updateField(lead.id, 'name', e.target.value);
+            card.querySelector('.edit-phone').onblur = (e) => updateField(lead.id, 'phone', e.target.value);
+            card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             
-            // Grava no Firebase quando o utilizador tira o foco (blur) do campo
-            nameInput.addEventListener('blur', (e) => updateLead(lead.id, 'name', e.target.value));
-            phoneInput.addEventListener('blur', (e) => {
-                updateLead(lead.id, 'phone', e.target.value);
-                // Força re-render para atualizar o estado do botão WhatsApp
-                const updatedLead = leadsData.find(l => l.id === lead.id);
-                if(updatedLead) { updatedLead.phone = e.target.value; renderBoard(); }
-            });
-            addressInput.addEventListener('blur', (e) => updateLead(lead.id, 'address', e.target.value));
-            notesInput.addEventListener('blur', (e) => updateLead(lead.id, 'notes', e.target.value));
+            // Adicionar Nota ao Histórico
+            const addNoteBtn = card.querySelector('.add-note-btn');
+            const newNoteInput = card.querySelector('.new-note-input');
+            if(addNoteBtn) {
+                addNoteBtn.onclick = async () => {
+                    if(!newNoteInput.value.trim()) return;
+                    const newHistory = lead.history || [];
+                    newHistory.push({
+                        text: newNoteInput.value,
+                        createdAt: Date.now(),
+                        updatedAt: null
+                    });
+                    await updateField(lead.id, 'history', newHistory);
+                };
+            }
 
-            // Botão Eliminar
-            card.querySelector('.delete-btn').addEventListener('click', () => {
-                if(confirm(`Tem a certeza que deseja eliminar "${lead.name}"?`)) {
-                    deleteLead(lead.id);
-                }
+            // Editar Nota Existente
+            card.querySelectorAll('.edit-history-item').forEach(area => {
+                area.onblur = async (e) => {
+                    const idx = e.target.dataset.index;
+                    const newHistory = [...lead.history];
+                    if(newHistory[idx].text === e.target.value) return;
+                    newHistory[idx].text = e.target.value;
+                    newHistory[idx].updatedAt = Date.now();
+                    await updateField(lead.id, 'history', newHistory);
+                };
             });
 
-            // Botão WhatsApp
-            const wppBtn = card.querySelector('.whatsapp-btn');
-            wppBtn.addEventListener('click', () => {
+            card.querySelector('.delete-btn').onclick = () => confirm('Excluir lead?') && db.collection('leads').doc(lead.id).delete();
+            
+            card.querySelector('.whatsapp-btn').onclick = () => {
                 if(!lead.phone) return;
-                let cleanPhone = lead.phone.replace(/\D/g, '');
-                if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
-                window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}`, '_blank');
-            });
+                let num = lead.phone.replace(/\D/g, '');
+                if (num.length >= 10 && !num.startsWith('55')) num = '55' + num;
+                window.open(`https://api.whatsapp.com/send?phone=${num}`, '_blank');
+            };
 
             return card;
         }
 
-        // ==========================================
-        // 4. LÓGICA DE DRAG AND DROP (Vanilla JS)
-        // ==========================================
-        function handleDragStart(e) {
-            draggedLeadId = this.dataset.leadId;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.dataset.leadId); // Necessário para Firefox
-            setTimeout(() => this.classList.add('card-ghost'), 0);
-        }
-
-        function handleDragEnd() {
-            this.classList.remove('card-ghost');
-            draggedLeadId = null;
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault(); // Necessário para permitir o "drop"
-            e.dataTransfer.dropEffect = 'move';
-            
-            // Feedback visual subtil na coluna de destino
-            this.classList.add('bg-slate-300/40');
-        }
+        // 4. FUNÇÕES FIREBASE
+        async function updateField(id, field, val) { await db.collection('leads').doc(id).update({ [field]: val }); }
 
         function handleDrop(e) {
             e.preventDefault();
-            this.classList.remove('bg-slate-300/40'); // Remove feedback visual
-            
-            const targetColId = this.dataset.colId;
-            if (draggedLeadId && targetColId) {
-                // Verificar se a coluna mudou
-                const lead = leadsData.find(l => l.id === draggedLeadId);
-                if(lead && lead.columnId !== targetColId) {
-                    updateLead(draggedLeadId, 'columnId', targetColId);
-                }
-            }
+            this.classList.remove('bg-slate-300/40');
+            const colId = this.dataset.colId;
+            if (draggedLeadId) updateField(draggedLeadId, 'columnId', colId);
         }
 
-        // ==========================================
-        // 5. OPERAÇÕES FIREBASE (CRUD)
-        // ==========================================
-        async function addLead(data) {
-            try {
-                await db.collection('leads').add({
-                    ...data,
-                    columnId: columns[0].id,
-                    notes: '',
-                    createdAt: Date.now()
-                });
-            } catch (error) {
-                console.error("Erro ao adicionar:", error);
-                alert("Erro ao gravar. Verifique as regras do Firebase.");
-            }
-        }
-
-        async function updateLead(id, field, value) {
-            try {
-                await db.collection('leads').doc(id).update({ [field]: value });
-            } catch (error) {
-                console.error("Erro ao atualizar:", error);
-            }
-        }
-
-        async function deleteLead(id) {
-            try {
-                await db.collection('leads').doc(id).delete();
-            } catch (error) {
-                console.error("Erro ao eliminar:", error);
-            }
-        }
-
-        // ==========================================
-        // 6. PROCESSAMENTO DE IMAGEM E EVENTOS
-        // ==========================================
-        
-        // Adição Manual
-        manualForm.addEventListener('submit', (e) => {
+        // 5. CAPTURA E OCR
+        manualForm.onsubmit = (e) => {
             e.preventDefault();
-            const nameInput = document.getElementById('manualName');
-            if (nameInput.value.trim() !== '') {
-                addLead({ name: nameInput.value.trim(), phone: '', address: '' });
-                nameInput.value = '';
-            }
-        });
+            const input = document.getElementById('manualName');
+            db.collection('leads').add({ name: input.value, columnId: 'col-1', createdAt: Date.now(), history: [] });
+            input.value = '';
+        };
 
-        // Eventos da Área de Colagem
-        pasteZone.addEventListener('paste', async (e) => {
-            const items = e.clipboardData.items;
-            let imageFile = null;
-
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    imageFile = items[i].getAsFile();
-                    break;
-                }
-            }
-
-            if (imageFile) {
-                e.preventDefault();
-                setProcessingState(true);
-
-                try {
-                    // Executar IA do Tesseract
-                    const result = await Tesseract.recognize(imageFile, 'por');
-                    const text = result.data.text;
-                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                    
-                    let name = "Novo Lead";
-                    let address = "";
-                    let phone = "";
-
-                    // Lógica Básica de Extração (RegExp)
-                    const phoneMatch = text.match(/(?:\(\d{2}\)\s?)?\d{4,5}-\d{4}/);
-                    if (phoneMatch) phone = phoneMatch[0];
-
-                    if (lines.length > 0) {
-                        // Ignorar "Pet Shop" genérico na primeira linha
-                        if (lines[0].toLowerCase().includes('pet shop') && lines.length > 1) {
-                            name = lines[1];
-                        } else {
-                            name = lines[0];
-                        }
-                    }
-
-                    const addressLine = lines.find(l => 
-                        l.toLowerCase().includes('rua') || 
-                        l.toLowerCase().includes('avenida') || 
-                        l.toLowerCase().includes('praça') || 
-                        l.toLowerCase().includes('centro')
-                    );
-                    if (addressLine) address = addressLine;
-
-                    // Gravar no Firebase
-                    await addLead({ name, phone, address, rawText: text });
-
-                } catch (error) {
-                    console.error("Erro no OCR:", error);
-                    alert("A IA não conseguiu ler a imagem. Tente de novo ou insira manualmente.");
-                } finally {
-                    setProcessingState(false);
-                }
-            }
-        });
-
-        // Limpar feedback visual das colunas se o drag sair do quadro
-        document.addEventListener('dragover', (e) => {
-            if (!e.target.closest('.kanban-col')) {
-                document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('bg-slate-300/40'));
-            }
-        });
-
-        function setProcessingState(isProcessing) {
-            if (isProcessing) {
+        pasteZone.onpaste = async (e) => {
+            const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
+            if (item) {
                 pasteInitial.classList.add('hidden');
                 pasteProcessing.classList.remove('hidden');
-                pasteProcessing.classList.add('flex');
-                pasteZone.classList.add('bg-blue-50', 'border-blue-300');
-                pasteZone.classList.remove('bg-slate-50', 'border-slate-300');
-            } else {
-                pasteInitial.classList.remove('hidden');
-                pasteProcessing.classList.add('hidden');
-                pasteProcessing.classList.remove('flex');
-                pasteZone.classList.remove('bg-blue-50', 'border-blue-300');
-                pasteZone.classList.add('bg-slate-50', 'border-slate-300');
-            }
-        }
+                try {
+                    const res = await Tesseract.recognize(item.getAsFile(), 'por');
+                    const text = res.data.text;
+                    const lines = text.split('\n').filter(l => l.trim().length > 2);
+                    
+                    let name = lines[0]?.toLowerCase().includes('pet') ? lines[1] : lines[0];
+                    let phone = text.match(/(?:\(\d{2}\)\s?)?\d{4,5}-\d{4}/)?.[0] || '';
+                    let addr = lines.find(l => l.match(/rua|av|praça|centro/i)) || '';
 
+                    await db.collection('leads').add({
+                        name: name || 'Novo Lead',
+                        phone: phone,
+                        address: addr,
+                        columnId: 'col-1',
+                        createdAt: Date.now(),
+                        history: [{ text: "Lead capturado via imagem.", createdAt: Date.now(), updatedAt: null }]
+                    });
+                } finally {
+                    pasteInitial.classList.remove('hidden');
+                    pasteProcessing.classList.add('hidden');
+                }
+            }
+        };
     </script>
 </body>
 </html>
