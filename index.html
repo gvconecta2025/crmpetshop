@@ -32,8 +32,6 @@
             appId: "SEU_APP_ID"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const { useState, useEffect } = React;
 
         // Ícones do sistema
@@ -46,6 +44,28 @@
         };
 
         function App() {
+            // Proteção contra ecrã branco: Verifica se configurou as chaves
+            if (firebaseConfig.apiKey === "SUA_API_KEY") {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-red-50 p-6">
+                        <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg text-center border-t-4 border-red-500">
+                            <h1 className="text-2xl font-bold text-red-600 mb-4">Quase lá! Faltam as Chaves do Firebase 🔑</h1>
+                            <p className="text-slate-700 mb-4">Para que a tela não fique em branco, precisa de ligar o seu projeto à base de dados.</p>
+                            <p className="text-slate-600 text-sm bg-slate-100 p-3 rounded">Vá ao seu ficheiro <code>index.html</code> no GitHub e substitua <strong>"SUA_API_KEY"</strong> e os restantes valores pelas chaves reais do seu projeto Firebase (linha 28 do código).</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Iniciar Firebase de forma segura
+            let app, db;
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+            } catch (error) {
+                console.error("Erro a iniciar o Firebase:", error);
+            }
+
             const [leads, setLeads] = useState([]);
             const [columns] = useState([
                 { id: 'col-1', title: 'Novos Leads' },
@@ -58,6 +78,7 @@
 
             // Ligação ao Firebase em tempo real
             useEffect(() => {
+                if (!db) return;
                 const unsubscribe = onSnapshot(collection(db, 'leads'), (snapshot) => {
                     const fetchedLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     fetchedLeads.sort((a, b) => b.createdAt - a.createdAt);
@@ -104,6 +125,7 @@
                         });
                     } catch (error) {
                         console.error("Erro OCR:", error);
+                        alert("Não foi possível ler a imagem.");
                     } finally {
                         setIsProcessing(false);
                     }
@@ -112,13 +134,13 @@
 
             const handleManualAdd = async (e) => {
                 e.preventDefault();
-                if (!newLeadText.trim()) return;
+                if (!newLeadText.trim() || !db) return;
                 await addDoc(collection(db, 'leads'), { name: newLeadText, phone: '', address: '', columnId: columns[0].id, notes: '', createdAt: Date.now() });
                 setNewLeadText('');
             };
 
-            const updateLead = async (id, field, value) => { await updateDoc(doc(db, 'leads', id), { [field]: value }); };
-            const deleteLead = async (id) => { if (window.confirm('Eliminar Lead?')) await deleteDoc(doc(db, 'leads', id)); };
+            const updateLead = async (id, field, value) => { if (db) await updateDoc(doc(db, 'leads', id), { [field]: value }); };
+            const deleteLead = async (id) => { if (db && window.confirm('Eliminar Lead?')) await deleteDoc(doc(db, 'leads', id)); };
 
             const onDragStart = (e, id) => e.dataTransfer.setData('leadId', id);
             const onDragOver = (e) => e.preventDefault();
@@ -149,14 +171,14 @@
                                     <>
                                         <div className="bg-white p-3 rounded-full shadow-sm mb-3"><Icons.Image /></div>
                                         <p className="text-slate-700 font-semibold text-lg">Área de Captura Rápida</p>
-                                        <p className="text-slate-500 mt-1 text-center text-sm">Clique aqui e faça <kbd className="bg-slate-200 px-2 py-1 rounded">Ctrl + V</kbd></p>
+                                        <p className="text-slate-500 mt-1 text-center text-sm">Clique aqui e faça <kbd className="bg-slate-200 px-2 py-1 rounded font-mono">Ctrl + V</kbd></p>
                                     </>
                                 )}
                             </div>
                             <div className="w-full md:w-1/3 flex flex-col justify-center">
                                 <form onSubmit={handleManualAdd} className="flex gap-2">
                                     <input type="text" value={newLeadText} onChange={(e) => setNewLeadText(e.target.value)} placeholder="Nome do Pet Shop..." className="flex-1 border border-slate-300 rounded-lg px-4 py-2" />
-                                    <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg"><Icons.Plus /></button>
+                                    <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"><Icons.Plus /></button>
                                 </form>
                             </div>
                         </div>
@@ -169,24 +191,29 @@
                                     <h2 className="font-bold text-slate-700 mb-4 px-1">{column.title} <span className="bg-slate-300 text-slate-600 text-xs py-0.5 px-2 rounded-full">{leads.filter(l => l.columnId === column.id).length}</span></h2>
                                     <div className="flex-1 overflow-y-auto space-y-3 min-h-[150px]">
                                         {leads.filter(l => l.columnId === column.id).map(lead => (
-                                            <div key={lead.id} draggable onDragStart={(e) => onDragStart(e, lead.id)} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 cursor-grab hover:shadow-md">
+                                            <div key={lead.id} draggable onDragStart={(e) => onDragStart(e, lead.id)} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 cursor-grab hover:shadow-md transition">
                                                 <div className="flex items-start justify-between mb-3">
                                                     <div className="flex items-center gap-2 w-[85%]">
                                                         <span className="text-slate-300"><Icons.Grip /></span>
-                                                        <input type="text" value={lead.name} onChange={(e) => updateLead(lead.id, 'name', e.target.value)} className="font-bold text-slate-800 bg-transparent w-full focus:outline-none" />
+                                                        <input type="text" value={lead.name} onChange={(e) => updateLead(lead.id, 'name', e.target.value)} className="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded" />
                                                     </div>
-                                                    <button onClick={() => deleteLead(lead.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash /></button>
+                                                    <button onClick={() => deleteLead(lead.id)} className="text-slate-300 hover:text-red-500 transition"><Icons.Trash /></button>
                                                 </div>
                                                 <div className="space-y-2 mb-4">
-                                                    <input type="text" value={lead.phone} onChange={(e) => updateLead(lead.id, 'phone', e.target.value)} placeholder="Telefone..." className="w-full text-sm text-slate-600 bg-transparent focus:outline-none border-b border-slate-100" />
-                                                    <input type="text" value={lead.address} onChange={(e) => updateLead(lead.id, 'address', e.target.value)} placeholder="Endereço..." className="w-full text-xs text-slate-500 bg-transparent focus:outline-none border-b border-slate-100" />
+                                                    <input type="text" value={lead.phone} onChange={(e) => updateLead(lead.id, 'phone', e.target.value)} placeholder="Telefone..." className="w-full text-sm text-slate-600 bg-transparent focus:outline-none border-b border-slate-100 px-1 focus:border-slate-300" />
+                                                    <input type="text" value={lead.address} onChange={(e) => updateLead(lead.id, 'address', e.target.value)} placeholder="Endereço..." className="w-full text-xs text-slate-500 bg-transparent focus:outline-none border-b border-slate-100 px-1 focus:border-slate-300" />
                                                 </div>
-                                                <textarea value={lead.notes || ''} onChange={(e) => updateLead(lead.id, 'notes', e.target.value)} placeholder="+ Inserir observações..." className="w-full text-sm bg-yellow-50/50 border border-yellow-200/60 rounded-lg p-2 min-h-[60px]" />
-                                                <button onClick={() => openWhatsApp(lead.phone)} disabled={!lead.phone} className="mt-3 w-full bg-[#25D366] text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2">
+                                                <textarea value={lead.notes || ''} onChange={(e) => updateLead(lead.id, 'notes', e.target.value)} placeholder="+ Inserir observações..." className="w-full text-sm bg-yellow-50/50 border border-yellow-200/60 rounded-lg p-2 min-h-[60px] focus:outline-none focus:ring-1 focus:ring-yellow-400" />
+                                                <button onClick={() => openWhatsApp(lead.phone)} disabled={!lead.phone} className="mt-3 w-full bg-[#25D366] disabled:bg-slate-300 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-[#1da851] transition">
                                                     <Icons.Message /> Conversar
                                                 </button>
                                             </div>
                                         ))}
+                                        {leads.filter(l => l.columnId === column.id).length === 0 && (
+                                            <div className="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">
+                                                Arraste os leads para aqui
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
