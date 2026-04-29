@@ -1,0 +1,400 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, updateDoc } from 'firebase/firestore';
+import { Plus, Image as ImageIcon, Loader2, MessageCircle, GripVertical, Edit2, Check, Trash2 } from 'lucide-react';
+
+// --- 1. FIREBASE INITIALIZATION ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+  apiKey: "demo-key", projectId: "demo-project" // Fallback for local testing if needed
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'crm-leads-app';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [leads, setLeads] = useState([]);
+  const [columns, setColumns] = useState([
+    { id: 'col-1', title: 'Novos Leads', order: 1 },
+    { id: 'col-2', title: 'Em Contato', order: 2 },
+    { id: 'col-3', title: 'Apresentação', order: 3 },
+    { id: 'col-4', title: 'Fechado', order: 4 },
+  ]);
+  
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [newLeadText, setNewLeadText] = useState('');
+  const [editingColumnId, setEditingColumnId] = useState(null);
+  const [editingColumnTitle, setEditingColumnTitle] = useState('');
+
+  // --- 2. AUTHENTICATION (MANDATORY) ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Authentication Error:", error);
+      }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- 3. DATA FETCHING ---
+  useEffect(() => {
+    if (!user) return;
+
+    // Fetch Leads
+    const leadsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'leads');
+    const unsubscribeLeads = onSnapshot(leadsRef, (snapshot) => {
+      const fetchedLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort by creation time manually (Rule 2)
+      fetchedLeads.sort((a, b) => b.createdAt - a.createdAt);
+      setLeads(fetchedLeads);
+    }, (error) => console.error("Error fetching leads:", error));
+
+    // Fetch Columns (Settings)
+    const columnsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'columns');
+    const unsubscribeCols = onSnapshot(columnsRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const fetchedCols = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        fetchedCols.sort((a, b) => a.order - b.order);
+        setColumns(fetchedCols);
+      } else {
+        // Save default columns if none exist
+        columns.forEach(col => {
+          setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'columns', col.id), col);
+        });
+      }
+    }, (error) => console.error("Error fetching columns:", error));
+
+    return () => {
+      unsubscribeLeads();
+      unsubscribeCols();
+    };
+  }, [user]);
+
+  // --- 4. TESSERACT OCR INTEGRATION ---
+  const loadTesseract = () => {
+    return new Promise((resolve) => {
+      if (window.Tesseract) return resolve(window.Tesseract);
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      script.onload = () => resolve(window.Tesseract);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePaste = async (e) => {
+    const items = e.clipboardData.items;
+    let imageFile = null;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        imageFile = items[i].getAsFile();
+        break;
+      }
+    }
+
+    if (imageFile) {
+      e.preventDefault();
+      setIsProcessing(true);
+      try {
+        const TesseractLib = await loadTesseract();
+        const result = await TesseractLib.recognize(imageFile, 'por');
+        const text = result.data.text;
+        
+        // Basic parsing logic based on the user's screenshots
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        let name = "Novo Lead";
+        let address = "";
+        let phone = "";
+
+        // Find phone
+        const phoneRegex = /(?:\(\d{2}\)\s?)?\d{4,5}-\d{4}/;
+        const phoneMatch = text.match(phoneRegex);
+        if (phoneMatch) phone = phoneMatch[0];
+
+        // Find name (usually 1st or 2nd line, avoiding "Pet Shop" generic header)
+        if (lines.length > 0) {
+            if (lines[0].toLowerCase().includes('pet shop') && lines.length > 1) {
+                name = lines[1];
+            } else {
+                name = lines[0];
+            }
+        }
+
+        // Find address (contains Rua, Avenida, Praça)
+        const addressLine = lines.find(l => l.toLowerCase().includes('rua') || l.toLowerCase().includes('avenida') || l.toLowerCase().includes('praça') || l.toLowerCase().includes('centro'));
+        if (addressLine) address = addressLine;
+
+        await createLead({ name, phone, address, rawText: text });
+      } catch (error) {
+        console.error("OCR Error:", error);
+        // Fallback or error state could be handled here
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  // --- 5. LEAD MANAGEMENT ---
+  const createLead = async (leadData) => {
+    if (!user) return;
+    const newId = crypto.randomUUID();
+    const lead = {
+      ...leadData,
+      columnId: columns[0].id, // Default to first column
+      notes: '',
+      createdAt: Date.now()
+    };
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'leads', newId), lead);
+  };
+
+  const handleManualAdd = (e) => {
+    e.preventDefault();
+    if (!newLeadText.trim()) return;
+    createLead({ name: newLeadText, phone: '', address: '' });
+    setNewLeadText('');
+  };
+
+  const updateLead = async (id, field, value) => {
+    if (!user) return;
+    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'leads', id), { [field]: value });
+  };
+
+  const deleteLead = async (id) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'leads', id));
+  };
+
+  // --- 6. DRAG AND DROP ---
+  const onDragStart = (e, id) => {
+    e.dataTransfer.setData('leadId', id);
+  };
+
+  const onDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const onDrop = async (e, columnId) => {
+    const leadId = e.dataTransfer.getData('leadId');
+    if (leadId) {
+      await updateLead(leadId, 'columnId', columnId);
+    }
+  };
+
+  // --- 7. COLUMN MANAGEMENT ---
+  const saveColumnTitle = async (column) => {
+    if (!user || !editingColumnTitle.trim()) {
+      setEditingColumnId(null);
+      return;
+    }
+    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'columns', column.id), {
+      title: editingColumnTitle
+    });
+    setEditingColumnId(null);
+  };
+
+  // --- 8. UTILS ---
+  const openWhatsApp = (phone) => {
+    if (!phone) return;
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+      cleanPhone = '55' + cleanPhone;
+    }
+    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}`, '_blank');
+  };
+
+  if (!user) {
+    return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-100 p-6 font-sans flex flex-col">
+      {/* Header & Input Zone */}
+      <div className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h1 className="text-2xl font-bold text-slate-800 mb-4">CRM Pet Shops</h1>
+        
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Paste Zone */}
+          <div 
+            className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-text outline-none
+              ${isProcessing ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-300 hover:border-blue-400 focus:border-blue-500 focus:bg-white'}`}
+            onPaste={handlePaste}
+            tabIndex={0}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-3" />
+                <p className="text-blue-700 font-medium">A ler imagem com IA...</p>
+                <p className="text-sm text-blue-500 mt-1">Extraindo dados de contato</p>
+              </>
+            ) : (
+              <>
+                <div className="bg-white p-3 rounded-full shadow-sm mb-3">
+                  <ImageIcon className="w-8 h-8 text-slate-400" />
+                </div>
+                <p className="text-slate-700 font-semibold text-lg">Área de Captura Rápida</p>
+                <p className="text-slate-500 mt-1 text-center text-sm max-w-sm">
+                  Clique aqui e pressione <kbd className="bg-slate-200 px-2 py-1 rounded text-xs mx-1 font-mono text-slate-700">Ctrl + V</kbd> para colar um print. O sistema extrairá os dados automaticamente.
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Manual Entry */}
+          <div className="w-full md:w-1/3 flex flex-col justify-center">
+            <p className="text-sm font-medium text-slate-500 mb-2">Ou adicione manualmente:</p>
+            <form onSubmit={handleManualAdd} className="flex gap-2">
+              <input 
+                type="text" 
+                value={newLeadText}
+                onChange={(e) => setNewLeadText(e.target.value)}
+                placeholder="Nome do Pet Shop..." 
+                className="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <button 
+                type="submit"
+                disabled={!newLeadText.trim()}
+                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Kanban Board */}
+      <div className="flex-1 overflow-x-auto pb-6">
+        <div className="flex gap-6 min-w-max h-full">
+          {columns.map(column => (
+            <div 
+              key={column.id}
+              className="w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200"
+              onDragOver={onDragOver}
+              onDrop={(e) => onDrop(e, column.id)}
+            >
+              {/* Column Header */}
+              <div className="flex items-center justify-between mb-4 px-1 group">
+                {editingColumnId === column.id ? (
+                  <div className="flex w-full items-center gap-2">
+                    <input 
+                      autoFocus
+                      type="text"
+                      value={editingColumnTitle}
+                      onChange={(e) => setEditingColumnTitle(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && saveColumnTitle(column)}
+                      className="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button onClick={() => saveColumnTitle(column)} className="text-green-600 hover:bg-green-100 p-1 rounded">
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="font-bold text-slate-700 flex items-center gap-2">
+                      {column.title}
+                      <span className="bg-slate-300 text-slate-600 text-xs py-0.5 px-2 rounded-full font-medium">
+                        {leads.filter(l => l.columnId === column.id).length}
+                      </span>
+                    </h2>
+                    <button 
+                      onClick={() => { setEditingColumnId(column.id); setEditingColumnTitle(column.title); }}
+                      className="text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Cards List */}
+              <div className="flex-1 overflow-y-auto space-y-3 min-h-[150px]">
+                {leads.filter(l => l.columnId === column.id).map(lead => (
+                  <div 
+                    key={lead.id}
+                    draggable
+                    onDragStart={(e) => onDragStart(e, lead.id)}
+                    className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-blue-200 transition-all group"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2 w-[85%]">
+                        <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                        <input 
+                          type="text"
+                          value={lead.name}
+                          onChange={(e) => updateLead(lead.id, 'name', e.target.value)}
+                          className="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 border-b border-transparent focus:border-slate-300 px-1 rounded-t"
+                        />
+                      </div>
+                      <button 
+                        onClick={() => { if(window.confirm('Tem a certeza que deseja eliminar?')) deleteLead(lead.id); }}
+                        className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Eliminar Lead"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <input 
+                        type="text"
+                        value={lead.phone}
+                        onChange={(e) => updateLead(lead.id, 'phone', e.target.value)}
+                        placeholder="Telefone (ex: 33 3271-4548)"
+                        className="w-full text-sm text-slate-600 bg-transparent focus:outline-none focus:bg-slate-50 border-b border-transparent focus:border-slate-300 px-1 py-0.5 rounded-t"
+                      />
+                      <input 
+                        type="text"
+                        value={lead.address}
+                        onChange={(e) => updateLead(lead.id, 'address', e.target.value)}
+                        placeholder="Endereço..."
+                        className="w-full text-xs text-slate-500 bg-transparent focus:outline-none focus:bg-slate-50 border-b border-transparent focus:border-slate-300 px-1 py-0.5 rounded-t truncate"
+                        title={lead.address}
+                      />
+                    </div>
+
+                    <textarea
+                      value={lead.notes || ''}
+                      onChange={(e) => updateLead(lead.id, 'notes', e.target.value)}
+                      placeholder="+ Inserir mais informações..."
+                      className="w-full text-sm bg-yellow-50/50 border border-yellow-200/60 rounded-lg p-2 text-slate-700 focus:outline-none focus:ring-1 focus:ring-yellow-400 min-h-[60px] resize-y mb-3 placeholder-slate-400"
+                    />
+
+                    <button 
+                      onClick={() => openWhatsApp(lead.phone)}
+                      disabled={!lead.phone}
+                      className="w-full bg-[#25D366] hover:bg-[#1da851] disabled:bg-slate-200 disabled:text-slate-400 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Conversar
+                    </button>
+                  </div>
+                ))}
+                
+                {/* Empty Drop Zone Indicator */}
+                {leads.filter(l => l.columnId === column.id).length === 0 && (
+                  <div className="h-full border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">
+                    Arraste leads para aqui
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
