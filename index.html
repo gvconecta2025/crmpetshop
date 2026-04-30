@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.0 Pipeline</title>
+    <title>CRM Pet Shops - Kanban V5.1 PRO</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -29,7 +29,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-chart-line mr-1"></i> Versão 5.0 PRO</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-chart-line mr-1"></i> Versão 5.1 PRO</span>
                 </h1>
                 
                 <div class="flex items-center gap-4 w-full md:w-auto">
@@ -142,13 +142,25 @@
         // Formatação de Moeda
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
+        // Função de Scroll ao Topo (Injetada no HTML das colunas)
+        window.scrollToTop = (colId) => {
+            const container = document.querySelector(`.kanban-scroll-container[data-col-id="${colId}"]`);
+            if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
         // ==========================================
         // RENDERIZAÇÃO DO QUADRO
         // ==========================================
         function renderBoard() {
             if(columnsData.length === 0) return;
+
+            // 1. CAPTURAR MEMÓRIA DE SCROLL ANTES DE APAGAR O QUADRO
+            const scrollPositions = {};
+            document.querySelectorAll('.kanban-scroll-container').forEach(container => {
+                scrollPositions[container.dataset.colId] = container.scrollTop;
+            });
+
             boardEl.innerHTML = '';
-            
             updateDashboard();
             
             // LÓGICA DE RESPONSIVIDADE DAS COLUNAS (Até 8 = Fit, 9+ = Scroll)
@@ -188,6 +200,11 @@
                         <div class="flex justify-between items-center mb-2 group cursor-grab">
                             <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs"></i>
                             <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()">
+                            
+                            <button onclick="scrollToTop('${col.id}')" class="text-slate-300 hover:text-blue-500 transition px-1 ml-auto" title="Subir ao topo">
+                                <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                            </button>
+                            
                             <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200 shrink-0">${colLeads.length}</span>
                         </div>
                         
@@ -199,7 +216,9 @@
                 `;
 
                 const container = document.createElement('div');
-                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3';
+                // Classe 'kanban-scroll-container' adicionada para podermos memorizar o scroll!
+                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3 kanban-scroll-container';
+                container.dataset.colId = col.id;
                 
                 colLeads.forEach(lead => container.appendChild(createCard(lead, col.title)));
                 if(colLeads.length === 0) {
@@ -208,6 +227,13 @@
                 
                 colEl.appendChild(container);
                 boardEl.appendChild(colEl);
+            });
+
+            // 2. RESTAURAR A MEMÓRIA DE SCROLL DE FORMA INVISÍVEL
+            document.querySelectorAll('.kanban-scroll-container').forEach(container => {
+                if (scrollPositions[container.dataset.colId] !== undefined) {
+                    container.scrollTop = scrollPositions[container.dataset.colId];
+                }
             });
 
             // Botão Adicionar Coluna
@@ -312,7 +338,6 @@
                 let val = e.target.value.replace(/\D/g, '');
                 let raw = val ? parseFloat(val) / 100 : 0;
                 updateField(lead.id, 'dealValue', raw);
-                setTimeout(renderBoard, 100); // Atualiza os totais nas colunas
             });
 
             // Demais Eventos
@@ -332,7 +357,7 @@
                 let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
                 e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
             });
-            phoneInput.onblur = (e) => { updateField(lead.id, 'phone', e.target.value); setTimeout(renderBoard, 100); };
+            phoneInput.onblur = (e) => { updateField(lead.id, 'phone', e.target.value); };
             
             // Colagem de Print OCR
             phoneInput.addEventListener('paste', async (e) => {
@@ -355,7 +380,6 @@
                         }
                     } catch(err) {} finally {
                         phoneIcon.className = "fa-solid fa-phone text-xs text-slate-400 mr-2";
-                        setTimeout(renderBoard, 100);
                     }
                 }
             });
@@ -369,6 +393,28 @@
             
             card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead?') && db.collection('leads').doc(lead.id).delete();
             
+            // Notas Histórico
+            const addNoteBtn = card.querySelector('.add-note-btn');
+            if(addNoteBtn) {
+                addNoteBtn.onclick = async () => {
+                    const val = card.querySelector('.new-note-input').value;
+                    if(!val.trim()) return;
+                    const newHistory = lead.history || [];
+                    newHistory.push({ text: val, createdAt: Date.now(), updatedAt: null });
+                    await updateField(lead.id, 'history', newHistory);
+                };
+            }
+            card.querySelectorAll('.edit-history-item').forEach(area => {
+                area.onblur = async (e) => {
+                    const idx = e.target.dataset.index;
+                    const newHistory = [...lead.history];
+                    if(newHistory[idx].text === e.target.value) return;
+                    newHistory[idx].text = e.target.value;
+                    newHistory[idx].updatedAt = Date.now();
+                    await updateField(lead.id, 'history', newHistory);
+                };
+            });
+
             return card;
         }
 
