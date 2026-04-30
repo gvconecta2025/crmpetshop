@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.5</title>
+    <title>CRM Pet Shops - Kanban V5.6</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -31,7 +31,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.5</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.6</span>
                 </h1>
                 
                 <div class="flex items-center gap-3 w-full md:w-auto">
@@ -159,7 +159,7 @@
 
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         
-        // NOVA MÁSCARA (Resolve fixo e celular)
+        // MÁSCARA (Resolve fixo e celular)
         function mascaraTelefoneInteligente(valorPuro) {
             if(!valorPuro) return '';
             let val = valorPuro.replace(/\D/g, ''); 
@@ -414,7 +414,7 @@
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`http://googleusercontent.com/maps.google.com/4{encodeURIComponent(addr)}`, '_blank');
+                if(addr) window.open(`http://googleusercontent.com/maps.google.com/5{encodeURIComponent(addr)}`, '_blank');
                 else alert('Por favor, preencha o endereço.');
             };
 
@@ -575,7 +575,7 @@
         window.nextSearch = () => focusSearchMatch(currentSearchIndex + 1);
 
         // ==========================================
-        // EXTRAÇÃO INTELIGENTE DE PRINT (GOOGLE MAPS)
+        // EXTRAÇÃO INTELIGENTE DE PRINT (GOOGLE MAPS) - V5.6 CAÇADOR DE NOMES
         // ==========================================
         const manualPhoneInput = document.getElementById('manualPhone');
         const manualAddressInput = document.getElementById('manualAddress');
@@ -590,7 +590,7 @@
             db.collection('leads').add({ 
                 name: manualNameInput.value, 
                 phone: manualPhoneInput.value, 
-                address: manualAddressInput.value, // Agora salva o endereço
+                address: manualAddressInput.value,
                 dealValue: 0, 
                 columnId: columnsData[0].id, 
                 createdAt: Date.now(), 
@@ -614,10 +614,34 @@
                 try {
                     const res = await Tesseract.recognize(item.getAsFile(), 'por');
                     const text = res.data.text;
-                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-                    
-                    // 1. Nome: primeira linha
-                    let name = lines[0] || 'Novo Lead do Maps';
+                    const lines = text.split('\n').map(l => l.trim());
+
+                    // --- NOVO CAÇADOR DE NOMES ---
+                    let name = 'Novo Lead';
+                    const palavrasIgnoradas = ['pesquise', 'google', 'maps', 'rotas', 'salvar', 'compartilhar', 'avaliaç', 'telefone', 'endereço', 'fechado', 'aberto', 'adicionar'];
+                    const palavrasChavePet = ['pet', 'shop', 'agro', 'vet', 'raç', 'rac', 'bicho', 'cão', 'cao', 'gato', 'clínica', 'clinica', 'pata', 'animal'];
+
+                    for (let i = 0; i < Math.min(lines.length, 8); i++) {
+                        let linhaAtual = lines[i];
+                        let linhaLower = linhaAtual.toLowerCase();
+
+                        // Pula lixo ou avaliações
+                        if (linhaAtual.length < 4) continue;
+                        if (palavrasIgnoradas.some(w => linhaLower.includes(w))) continue;
+                        if (/^\d+[,\.]\d+/.test(linhaAtual) || /^\d+\s*\(/.test(linhaAtual)) continue;
+
+                        // Se achar palavra chave, é o nome!
+                        if (palavrasChavePet.some(w => linhaLower.includes(w))) {
+                            name = linhaAtual;
+                            break;
+                        }
+
+                        // Se for a primeira linha limpa, guarda como backup
+                        if (name === 'Novo Lead') {
+                            name = linhaAtual;
+                        }
+                    }
+                    // -----------------------------
 
                     // 2. Extrair Telefones e Priorizar Celular
                     let finalPhone = '';
@@ -629,7 +653,6 @@
                             let limpo = p.replace(/\D/g, '');
                             return limpo.length >= 10 && limpo.replace(/^55/, '').length === 11 && limpo.replace(/^55/, '')[2] === '9';
                         });
-                        // Prefere celular. Se não, usa o primeiro que achou (fixo)
                         let escolhido = celulares.length > 0 ? celulares[0] : allPhones[0];
                         finalPhone = mascaraTelefoneInteligente(escolhido);
                     }
@@ -637,8 +660,8 @@
                     // 3. Extrair Endereço do Maps
                     let addr = lines.find(l => 
                         l.match(/(rua|av|avenida|praça|rodovia|bairro|centro)/i) || 
-                        l.match(/,\s*\d+/) || // Tem vírgula seguida de número
-                        l.match(/\d{5}-\d{3}/) // Tem CEP
+                        l.match(/,\s*\d+/) || 
+                        l.match(/\d{5}-\d{3}/) 
                     ) || '';
 
                     await db.collection('leads').add({ 
