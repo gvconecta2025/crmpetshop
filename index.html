@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.3</title>
+    <title>CRM Pet Shops - Kanban V5.4</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -20,7 +20,6 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        /* Destaques de Pesquisa */
         .highlight-match { background-color: #fef08a !important; color: #854d0e !important; border-radius: 4px; transition: all 0.3s ease; }
         .active-search-match { background-color: #f97316 !important; color: #ffffff !important; box-shadow: 0 0 0 3px #fed7aa; transform: scale(1.02); z-index: 10; }
     </style>
@@ -32,10 +31,14 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.3</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.4</span>
                 </h1>
                 
-                <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button id="btnFilterDuplicates" onclick="toggleDuplicates()" class="hidden bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-bold transition-all items-center gap-2 shadow-sm whitespace-nowrap">
+                        <i class="fa-solid fa-copy"></i> <span id="dupCountText">Duplicados (0)</span>
+                    </button>
+
                     <a href="disparador/" target="_blank" rel="noopener noreferrer" class="bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-paper-plane"></i> Disparador
                     </a>
@@ -72,7 +75,7 @@
                 <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-inner">
                     <div class="flex flex-col lg:flex-row justify-between lg:items-end mb-3 gap-4">
                         <div class="shrink-0">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Volume Total de Leads</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Volume Total</p>
                             <p class="text-3xl font-black text-slate-800 leading-none" id="dashTotalLeads">0</p>
                         </div>
                         <div id="dashMetrics" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 items-end w-full lg:justify-end">
@@ -124,9 +127,13 @@
         let draggedColId = null; 
         let expandedLeads = new Set();
         
+        // Pesquisa
         let currentSearchTerm = "";
         let searchMatches = []; 
         let currentSearchIndex = -1; 
+
+        // Repetições (Duplicatas)
+        let showOnlyDuplicates = false;
 
         const columnColors = [
             { bg: 'bg-blue-500', text: 'text-blue-600', dot: 'text-blue-500', lightBg: 'bg-blue-50' },
@@ -154,15 +161,10 @@
 
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         
-        // MÁSCARA INTELIGENTE DE TELEFONE (Resolve o problema do Zero e +55)
         function mascaraTelefoneInteligente(valorPuro) {
-            let val = valorPuro.replace(/\D/g, ''); // Tira letras e espaços
-            // Remove +55 se houver
+            let val = valorPuro.replace(/\D/g, ''); 
             if (val.startsWith('55') && val.length > 11) val = val.substring(2);
-            // Remove 0 no início (Erro do Google Maps)
             if (val.startsWith('0')) val = val.substring(1);
-            
-            // Aplica máscara (XX) XXXXX-XXXX
             let x = val.match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
             if (!x) return '';
             return !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
@@ -173,16 +175,64 @@
             if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
+        window.toggleDuplicates = () => {
+            showOnlyDuplicates = !showOnlyDuplicates;
+            const btn = document.getElementById('btnFilterDuplicates');
+            if(showOnlyDuplicates) {
+                btn.classList.replace('bg-red-50', 'bg-red-500');
+                btn.classList.replace('text-red-600', 'text-white');
+                btn.innerHTML = `<i class="fa-solid fa-filter"></i> Isolando Repetidos`;
+            } else {
+                btn.classList.replace('bg-red-500', 'bg-red-50');
+                btn.classList.replace('text-white', 'text-red-600');
+                renderBoard(); // Para atualizar o contador original
+            }
+            renderBoard();
+        };
+
         // ==========================================
-        // RENDERIZAÇÃO DO QUADRO
+        // RENDERIZAÇÃO DO QUADRO & CÁLCULO DE REPETIDOS
         // ==========================================
         function renderBoard() {
             if(columnsData.length === 0) return;
 
+            // Memória de Scroll
             const scrollPositions = {};
             document.querySelectorAll('.kanban-scroll-container').forEach(container => {
                 scrollPositions[container.dataset.colId] = container.scrollTop;
             });
+
+            // 1. CÁLCULO DE DUPLICATAS GLOBAL
+            const phoneCounts = {};
+            leadsData.forEach(lead => {
+                if(!lead.phone) return;
+                const cleanPhone = lead.phone.replace(/\D/g, '');
+                if(cleanPhone.length >= 10) phoneCounts[cleanPhone] = (phoneCounts[cleanPhone] || 0) + 1;
+            });
+
+            let duplicateCount = 0;
+            leadsData.forEach(lead => {
+                lead.isDuplicate = false;
+                if(lead.phone) {
+                    const cleanPhone = lead.phone.replace(/\D/g, '');
+                    if(cleanPhone.length >= 10 && phoneCounts[cleanPhone] > 1) {
+                        lead.isDuplicate = true;
+                        duplicateCount++;
+                    }
+                }
+            });
+
+            // Atualiza Botão do Filtro de Duplicatas
+            const dupBtn = document.getElementById('btnFilterDuplicates');
+            if(duplicateCount > 0) {
+                dupBtn.classList.remove('hidden');
+                dupBtn.classList.add('flex');
+                if(!showOnlyDuplicates) dupBtn.innerHTML = `<i class="fa-solid fa-copy"></i> Duplicados (${duplicateCount})`;
+            } else {
+                dupBtn.classList.add('hidden');
+                dupBtn.classList.remove('flex');
+                showOnlyDuplicates = false;
+            }
 
             boardEl.innerHTML = '';
             updateDashboard();
@@ -208,7 +258,13 @@
                 colEl.addEventListener('dragleave', () => colEl.classList.remove('bg-slate-300/40'));
                 colEl.addEventListener('drop', handleDrop);
 
-                const colLeads = leadsData.filter(l => l.columnId === col.id);
+                let colLeads = leadsData.filter(l => l.columnId === col.id);
+                
+                // Se o filtro estiver ativo, corta os leads normais
+                if(showOnlyDuplicates) {
+                    colLeads = colLeads.filter(l => l.isDuplicate);
+                }
+
                 const colorTheme = columnColors[index % columnColors.length];
                 
                 const isFechado = col.title.trim().toLowerCase() === 'fechado';
@@ -266,7 +322,7 @@
             const valueBgClass = isFechado ? 'bg-blue-50 border-blue-100 focus-within:border-blue-300' : 'bg-green-50 border-green-100 focus-within:border-green-300';
 
             const card = document.createElement('div');
-            card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative`;
+            card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative ${lead.isDuplicate ? 'ring-2 ring-red-300' : ''}`;
             card.draggable = true;
             card.dataset.leadId = lead.id;
 
@@ -283,6 +339,11 @@
             const formatDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '-';
             const formatTime = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
 
+            // SELO DE DUPLICATA
+            const duplicateBadge = lead.isDuplicate 
+                ? `<div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contato</span><span class="bg-red-100 text-red-600 border border-red-200 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase flex items-center gap-1 animate-pulse" title="Este número está noutro cartão também"><i class="fa-solid fa-triangle-exclamation"></i> Repetido</span></div>` 
+                : `<div class="hidden"></div>`;
+
             card.innerHTML = `
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-2 w-[80%]">
@@ -295,9 +356,12 @@
                 </div>
 
                 <div class="space-y-2 mb-3">
-                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300">
-                        <i class="fa-solid fa-phone text-xs text-slate-400 mr-2 phone-icon"></i>
-                        <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm text-slate-600" value="${lead.phone || ''}" placeholder="Celular (Print/Digite)">
+                    <div>
+                        ${duplicateBadge}
+                        <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 ${lead.isDuplicate ? 'border-red-200 bg-red-50/50' : ''}">
+                            <i class="fa-solid fa-phone text-xs ${lead.isDuplicate ? 'text-red-400' : 'text-slate-400'} mr-2 phone-icon"></i>
+                            <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm ${lead.isDuplicate ? 'text-red-700 font-bold' : 'text-slate-600'}" value="${lead.phone || ''}" placeholder="Celular (Print/Digite)">
+                        </div>
                     </div>
                     
                     <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300">
@@ -315,7 +379,7 @@
                 <div class="${isExpanded ? 'block' : 'hidden'} mt-4 pt-4 border-t border-slate-100">
                     <div class="flex justify-between items-center mb-2">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Histórico</p>
-                        <button class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold delete-btn"><i class="fa-regular fa-trash-can"></i> Excluir</button>
+                        <button class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold delete-btn"><i class="fa-regular fa-trash-can"></i> Excluir Cartão</button>
                     </div>
                     <div class="max-h-40 overflow-y-auto custom-scrollbar mb-3 space-y-3">
                         ${(lead.history || []).length > 0 ? lead.history.map((h, idx) => `
@@ -339,7 +403,6 @@
                 </button>
             `;
 
-            // Lógica Valor do Negócio
             const dealInput = card.querySelector('.edit-deal-value');
             dealInput.addEventListener('input', (e) => {
                 let val = e.target.value.replace(/\D/g, '');
@@ -352,23 +415,19 @@
                 updateField(lead.id, 'dealValue', raw);
             });
 
-            // Demais Eventos
             card.querySelector('.toggle-expand').onclick = () => { isExpanded ? expandedLeads.delete(lead.id) : expandedLeads.add(lead.id); renderBoard(); };
             card.querySelector('.edit-name').onblur = (e) => updateField(lead.id, 'name', e.target.value);
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`http://googleusercontent.com/maps.google.com/3{encodeURIComponent(addr)}`, '_blank');
+                if(addr) window.open(`http://googleusercontent.com/maps.google.com/4{encodeURIComponent(addr)}`, '_blank');
                 else alert('Por favor, preencha o endereço.');
             };
 
-            // Nova Lógica de Telefone (com Filtro Inteligente Google Maps)
             const phoneInput = card.querySelector('.edit-phone');
             const phoneIcon = card.querySelector('.phone-icon');
             
-            phoneInput.addEventListener('input', function(e) {
-                e.target.value = mascaraTelefoneInteligente(e.target.value);
-            });
+            phoneInput.addEventListener('input', function(e) { e.target.value = mascaraTelefoneInteligente(e.target.value); });
             phoneInput.onblur = (e) => { updateField(lead.id, 'phone', e.target.value); };
             
             phoneInput.addEventListener('paste', async (e) => {
@@ -395,7 +454,7 @@
                 window.open(`https://api.whatsapp.com/send?phone=${num}`, '_blank');
             };
             
-            card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead?') && db.collection('leads').doc(lead.id).delete();
+            card.querySelector('.delete-btn').onclick = () => confirm('Excluir Cartão permanentemente?') && db.collection('leads').doc(lead.id).delete();
             
             const addNoteBtn = card.querySelector('.add-note-btn');
             if(addNoteBtn) {
@@ -524,8 +583,6 @@
         // ==========================================
         // EVENTOS GERAIS
         // ==========================================
-        
-        // Uso da Máscara Inteligente no Input Manual
         const manualPhoneInput = document.getElementById('manualPhone');
         manualPhoneInput.addEventListener('input', function(e) {
             e.target.value = mascaraTelefoneInteligente(e.target.value);
@@ -549,7 +606,7 @@
                     const lines = text.split('\n').filter(l => l.trim().length > 2);
                     let name = lines[0]?.toLowerCase().includes('pet') ? lines[1] : lines[0];
                     let phone = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/)?.[0] || '';
-                    if(phone) phone = mascaraTelefoneInteligente(phone); // Aplica máscara também no OCR
+                    if(phone) phone = mascaraTelefoneInteligente(phone);
                     
                     let addr = lines.find(l => l.match(/rua|av|praça|centro/i)) || '';
                     await db.collection('leads').add({ name: name || 'Novo Lead', phone: phone, address: addr, dealValue: 0, columnId: columnsData[0].id, createdAt: Date.now(), history: [{ text: "Criado via Print.", createdAt: Date.now() }] });
