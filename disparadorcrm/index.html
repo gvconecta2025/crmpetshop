@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disparador WhatsApp PRO + CRM</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col md:flex-row min-h-[650px]">
+        
+        <div id="setupSection" class="w-full md:w-1/2 p-8 bg-white flex flex-col h-full border-r border-slate-100 relative">
+            <h1 class="text-2xl font-bold text-slate-800 mb-2"><i class="fa-brands fa-whatsapp text-[#25D366] mr-2"></i>Disparador PRO</h1>
+            <p class="text-sm text-slate-500 mb-6">Integração direta com o seu CRM Kanban.</p>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+                <label class="block text-[10px] font-bold text-blue-800 uppercase tracking-wide mb-2"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Importar do CRM</label>
+                <div class="flex gap-2">
+                    <select id="colunaSelect" class="flex-1 border border-blue-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700">
+                        <option value="">A carregar colunas...</option>
+                    </select>
+                    <button onclick="importarDoCRM()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap">
+                        Puxar Leads
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col gap-4">
+                <div class="flex-1 flex flex-col">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Lista de Números</label>
+                    <textarea id="listaNumeros" placeholder="Os números do CRM aparecerão aqui, ou cole manualmente...\nEx: (33) 99999-9999" class="w-full flex-1 min-h-[120px] border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-[#25D366] focus:border-[#25D366] outline-none text-sm custom-scrollbar resize-none"></textarea>
+                </div>
+
+                <div class="flex-1 flex flex-col">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Mensagem Padrão</label>
+                    <textarea id="mensagemPadrao" placeholder="Olá! Vi o seu Pet Shop e gostaria de apresentar uma novidade..." class="w-full flex-1 min-h-[120px] border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-[#25D366] focus:border-[#25D366] outline-none text-sm custom-scrollbar resize-none"></textarea>
+                </div>
+            </div>
+
+            <button onclick="prepararFila()" class="mt-5 w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md">
+                <i class="fa-solid fa-list-check"></i> Preparar Disparos
+            </button>
+        </div>
+
+        <div id="actionSection" class="w-full md:w-1/2 p-8 bg-slate-50 flex flex-col h-full relative opacity-50 pointer-events-none transition-opacity duration-300">
+            
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-slate-800">Fila de Envio</h2>
+                <span id="contadorFila" class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">0 / 0</span>
+            </div>
+
+            <div id="listaVisual" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-6 bg-white border border-slate-200 rounded-xl p-2">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
+                    <i class="fa-solid fa-inbox text-3xl mb-2 opacity-50"></i>
+                    <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
+                </div>
+            </div>
+
+            <button id="btnDisparar" onclick="dispararProximo()" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
+                <span id="textoBtnAuxiliar" class="text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
+            </button>
+
+            <button onclick="resetarTudo()" class="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm border border-slate-100" title="Limpar e Recomeçar">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO FIREBASE (As mesmas do CRM)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
+            authDomain: "crmpetshop.firebaseapp.com",
+            projectId: "crmpetshop",
+            storageBucket: "crmpetshop.firebasestorage.app",
+            messagingSenderId: "381013124221",
+            appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ==========================================
+        // LÓGICA DE INTEGRAÇÃO COM O CRM
+        // ==========================================
+        
+        // 1. Carregar as Colunas do Firebase para o Dropdown
+        async function carregarColunasCRM() {
+            try {
+                const snap = await db.collection('columns').orderBy('order').get();
+                const select = document.getElementById('colunaSelect');
+                
+                if (snap.empty) {
+                    select.innerHTML = '<option value="">Nenhuma coluna encontrada no CRM.</option>';
+                    return;
+                }
+
+                select.innerHTML = '<option value="">-- Escolha uma Coluna do CRM --</option>';
+                snap.forEach(doc => {
+                    const col = doc.data();
+                    select.innerHTML += `<option value="${col.id}">${col.title}</option>`;
+                });
+            } catch (error) {
+                console.error("Erro ao carregar colunas:", error);
+                document.getElementById('colunaSelect').innerHTML = '<option value="">Erro ao conectar ao CRM</option>';
+            }
+        }
+        // Iniciar carregamento assim que a página abre
+        carregarColunasCRM();
+
+        // 2. Função do Botão "Puxar Leads"
+        async function importarDoCRM() {
+            const select = document.getElementById('colunaSelect');
+            const colId = select.value;
+            const colNome = select.options[select.selectedIndex].text;
+
+            if (!colId) {
+                alert("Por favor, selecione uma coluna primeiro!");
+                return;
+            }
+
+            try {
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                
+                // Buscar os leads apenas da coluna selecionada
+                const snap = await db.collection('leads').where('columnId', '==', colId).get();
+                
+                let extracao = [];
+                snap.forEach(doc => {
+                    const lead = doc.data();
+                    // Só puxa se o lead tiver telefone
+                    if (lead.phone && lead.phone.trim() !== '') {
+                        extracao.push(`${lead.name} - ${lead.phone}`);
+                    }
+                });
+
+                btn.innerHTML = originalText;
+
+                if (extracao.length === 0) {
+                    alert(`Não foram encontrados Leads com telefone na coluna "${colNome}".`);
+                    return;
+                }
+
+                // Joga os telefones na caixa de texto
+                const textArea = document.getElementById('listaNumeros');
+                textArea.value = extracao.join('\n');
+                
+                // Efeito visual de sucesso
+                textArea.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+                setTimeout(() => textArea.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50'), 800);
+
+            } catch (error) {
+                console.error("Erro ao importar leads:", error);
+                alert("Erro ao puxar dados. Verifique a consola.");
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DO DISPARADOR (Fila e WhatsApp)
+        // ==========================================
+        let filaDeNumeros = [];
+        let nomesAssociados = [];
+        let indiceAtual = 0;
+        let mensagemCodificada = "";
+
+        const painelAcao = document.getElementById('actionSection');
+        const listaVisual = document.getElementById('listaVisual');
+        const btnDisparar = document.getElementById('btnDisparar');
+        const contadorFila = document.getElementById('contadorFila');
+
+        function prepararFila() {
+            const rawText = document.getElementById('listaNumeros').value;
+            const rawMsg = document.getElementById('mensagemPadrao').value;
+
+            if (!rawText.trim()) { alert("Por favor, importe ou cole a lista de números."); return; }
+
+            const linhas = rawText.split('\n');
+            filaDeNumeros = [];
+            nomesAssociados = [];
+
+            linhas.forEach(linha => {
+                let apenasNumeros = linha.replace(/\D/g, '');
+                if (apenasNumeros.length >= 10) {
+                    if (!apenasNumeros.startsWith('55')) apenasNumeros = '55' + apenasNumeros;
+                    
+                    // Tenta capturar o nome se vier do CRM (ex: "Pet Shop da Zazá - 3399999999")
+                    let nome = "Contato";
+                    if(linha.includes('-')) {
+                        nome = linha.split('-')[0].trim();
+                    }
+                    
+                    filaDeNumeros.push(apenasNumeros);
+                    nomesAssociados.push(nome);
+                }
+            });
+
+            if (filaDeNumeros.length === 0) { alert("Nenhum número válido encontrado."); return; }
+
+            mensagemCodificada = encodeURIComponent(rawMsg);
+            indiceAtual = 0;
+
+            painelAcao.classList.remove('opacity-50', 'pointer-events-none');
+            desenharListaVisual();
+            atualizarBotoes();
+        }
+
+        function desenharListaVisual() {
+            listaVisual.innerHTML = '';
+            filaDeNumeros.forEach((num, idx) => {
+                const div = document.createElement('div');
+                div.id = `item-${idx}`;
+                div.className = "flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100 text-sm text-slate-600 transition-colors";
+                div.innerHTML = `
+                    <div id="icon-${idx}" class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] text-slate-500 font-bold shrink-0">${idx + 1}</div>
+                    <div class="flex-1 truncate">
+                        <p class="font-bold text-slate-700 truncate text-xs">${nomesAssociados[idx]}</p>
+                        <p class="font-mono text-[11px] text-slate-500">+${num}</p>
+                    </div>
+                    <span id="status-${idx}" class="text-xs font-medium text-slate-400">Pendente</span>
+                `;
+                listaVisual.appendChild(div);
+            });
+        }
+
+        function atualizarBotoes() {
+            contadorFila.innerText = `${indiceAtual} / ${filaDeNumeros.length}`;
+
+            if (indiceAtual < filaDeNumeros.length) {
+                btnDisparar.disabled = false;
+                btnDisparar.classList.remove('bg-slate-400');
+                btnDisparar.classList.add('bg-[#25D366]', 'hover:bg-[#1da851]');
+                btnDisparar.innerHTML = `
+                    <span class="flex items-center gap-2 text-lg"><i class="fa-brands fa-whatsapp"></i> Enviar para: ${nomesAssociados[indiceAtual]}</span>
+                    <span class="text-xs font-normal opacity-90 mt-1 tracking-wider">+${filaDeNumeros[indiceAtual]}</span>
+                `;
+                
+                const itemAtual = document.getElementById(`item-${indiceAtual}`);
+                if(itemAtual) {
+                    itemAtual.classList.replace('bg-slate-50', 'bg-blue-50');
+                    itemAtual.classList.replace('border-slate-100', 'border-blue-200');
+                }
+            } else {
+                btnDisparar.disabled = true;
+                btnDisparar.classList.remove('bg-[#25D366]', 'hover:bg-[#1da851]', 'shadow-green-200', 'shadow-lg');
+                btnDisparar.classList.add('bg-slate-800');
+                btnDisparar.innerHTML = `
+                    <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-check-double"></i> Disparos Concluídos!</span>
+                    <span class="text-xs font-normal opacity-80 mt-1">Todos os contatos foram processados.</span>
+                `;
+            }
+        }
+
+        function dispararProximo() {
+            if (indiceAtual >= filaDeNumeros.length) return;
+
+            const numeroAlvo = filaDeNumeros[indiceAtual];
+            const url = `https://api.whatsapp.com/send?phone=${numeroAlvo}&text=${mensagemCodificada}`;
+            window.open(url, '_blank');
+
+            const itemLista = document.getElementById(`item-${indiceAtual}`);
+            const icone = document.getElementById(`icon-${indiceAtual}`);
+            const status = document.getElementById(`status-${indiceAtual}`);
+            
+            if (itemLista) {
+                itemLista.classList.replace('bg-blue-50', 'bg-green-50');
+                itemLista.classList.replace('border-blue-200', 'border-green-200');
+                
+                icone.classList.replace('bg-slate-200', 'bg-green-500');
+                icone.classList.replace('text-slate-500', 'text-white');
+                icone.innerHTML = '<i class="fa-solid fa-check"></i>';
+                
+                status.innerText = "Enviado";
+                status.classList.replace('text-slate-400', 'text-green-600');
+            }
+
+            indiceAtual++;
+            
+            const proximoItem = document.getElementById(`item-${indiceAtual}`);
+            if(proximoItem) proximoItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            atualizarBotoes();
+        }
+
+        function resetarTudo() {
+            if(confirm("Tem a certeza que deseja limpar tudo e recomeçar?")) {
+                document.getElementById('listaNumeros').value = "";
+                document.getElementById('colunaSelect').value = "";
+                filaDeNumeros = [];
+                nomesAssociados = [];
+                indiceAtual = 0;
+                
+                painelAcao.classList.add('opacity-50', 'pointer-events-none');
+                listaVisual.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
+                        <i class="fa-solid fa-inbox text-3xl mb-2 opacity-50"></i>
+                        <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
+                    </div>
+                `;
+                contadorFila.innerText = "0 / 0";
+                btnDisparar.innerHTML = `
+                    <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
+                    <span class="text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
+                `;
+                btnDisparar.className = "w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none";
+                btnDisparar.disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>
