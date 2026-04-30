@@ -3,24 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V4.2</title>
+    <title>CRM Pet Shops - Kanban V5.0 Pipeline</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .kanban-col { min-width: 320px; }
         .card-ghost { opacity: 0.5; background-color: #e2e8f0; }
         .col-ghost { opacity: 0.4; border: 2px dashed #94a3b8; }
         .history-item { border-left: 2px solid #e2e8f0; padding-left: 10px; margin-bottom: 10px; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .highlight-match { background-color: #fef08a !important; color: #854d0e !important; padding: 2px 4px; border-radius: 4px; transition: all 0.3s ease; }
@@ -33,7 +29,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-white px-2 py-1 rounded ml-3 uppercase tracking-widest">Versão 4.2</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-chart-line mr-1"></i> Versão 5.0 PRO</span>
                 </h1>
                 
                 <div class="flex items-center gap-4 w-full md:w-auto">
@@ -65,7 +61,7 @@
                 <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-inner">
                     <div class="flex flex-col lg:flex-row justify-between lg:items-end mb-3 gap-4">
                         <div class="shrink-0">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Volume Total</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Volume Total de Leads</p>
                             <p class="text-3xl font-black text-slate-800 leading-none" id="dashTotalLeads">0</p>
                         </div>
                         <div id="dashMetrics" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 items-end w-full lg:justify-end">
@@ -87,7 +83,6 @@
                         </div>
                     </form>
                 </div>
-
             </div>
         </div>
     </div>
@@ -99,7 +94,7 @@
 
     <script>
         // ==========================================
-        // 1. CONFIGURAÇÃO FIREBASE
+        // CONFIGURAÇÃO FIREBASE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -109,17 +104,16 @@
             messagingSenderId: "381013124221",
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
-
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
         // ==========================================
-        // 2. VARIÁVEIS DE ESTADO E CORES
+        // VARIÁVEIS E CORES
         // ==========================================
         let columnsData = [];
         let leadsData = [];
         let draggedLeadId = null;
-        let draggedColId = null; // Para reordenar colunas
+        let draggedColId = null; 
         let expandedLeads = new Set();
         let currentSearchTerm = "";
 
@@ -134,21 +128,22 @@
         const boardEl = document.getElementById('kanbanBoard');
         const searchInput = document.getElementById('searchInput');
 
-        // Escutar Colunas
+        // Escutar Dados
         db.collection('columns').orderBy('order').onSnapshot(snap => {
             columnsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderBoard();
         });
-
-        // Escutar Leads
-        db.collection('leads').onSnapshot((snapshot) => {
-            leadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        db.collection('leads').onSnapshot(snap => {
+            leadsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             leadsData.sort((a, b) => b.createdAt - a.createdAt);
             renderBoard();
         });
 
+        // Formatação de Moeda
+        const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+
         // ==========================================
-        // 3. RENDERIZAÇÃO E DASHBOARD
+        // RENDERIZAÇÃO DO QUADRO
         // ==========================================
         function renderBoard() {
             if(columnsData.length === 0) return;
@@ -156,47 +151,57 @@
             
             updateDashboard();
             
+            // LÓGICA DE RESPONSIVIDADE DAS COLUNAS (Até 8 = Fit, 9+ = Scroll)
+            const isFitMode = columnsData.length <= 8;
+            const columnWidthClass = isFitMode ? 'flex-1 min-w-[200px] max-w-[400px]' : 'w-80 shrink-0';
+
             columnsData.forEach((col, index) => {
                 const colEl = document.createElement('div');
-                colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-[calc(100vh-270px)] shrink-0 transition-colors';
+                colEl.className = `kanban-col ${columnWidthClass} bg-slate-200/60 rounded-2xl flex flex-col border border-slate-200 h-[calc(100vh-270px)] transition-colors`;
                 colEl.dataset.colId = col.id;
                 
-                // Eventos de Drag & Drop para a COLUNA INTEIRA
+                // Eventos Coluna
                 colEl.draggable = true;
                 colEl.addEventListener('dragstart', function(e) {
-                    if (e.target === colEl) { // Garante que não está a arrastar um card
+                    if (e.target === colEl) {
                         draggedColId = this.dataset.colId;
                         e.dataTransfer.effectAllowed = 'move';
                         setTimeout(() => this.classList.add('col-ghost'), 0);
                     }
                 });
-                colEl.addEventListener('dragend', function(e) {
-                    if (e.target === colEl) {
-                        this.classList.remove('col-ghost');
-                        draggedColId = null;
-                    }
-                });
-
+                colEl.addEventListener('dragend', function(e) { if (e.target === colEl) { this.classList.remove('col-ghost'); draggedColId = null; }});
                 colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.classList.add('bg-slate-300/40'); });
                 colEl.addEventListener('dragleave', () => colEl.classList.remove('bg-slate-300/40'));
                 colEl.addEventListener('drop', handleDrop);
 
                 const colLeads = leadsData.filter(l => l.columnId === col.id);
                 const colorTheme = columnColors[index % columnColors.length];
+                
+                // CALCULO DO FATURAMENTO DA COLUNA
+                const isFechado = col.title.trim().toLowerCase() === 'fechado';
+                const colTotalValue = colLeads.reduce((acc, l) => acc + (parseFloat(l.dealValue) || 0), 0);
+                const colSubtitle = isFechado ? 'Faturamento Atual' : 'Faturamento Possível';
+                const colSubtitleColor = isFechado ? 'text-blue-500' : 'text-green-600';
 
                 colEl.innerHTML = `
-                    <div class="flex justify-between items-center mb-4 px-1 group cursor-grab">
-                        <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs" title="Arraste para reordenar coluna"></i>
-                        <i class="fa-solid fa-circle text-[8px] ${colorTheme.dot} mr-2"></i>
-                        <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="(e) => e.stopPropagation()">
-                        <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200">${colLeads.length}</span>
+                    <div class="p-4 pb-2 border-b border-slate-200/50">
+                        <div class="flex justify-between items-center mb-2 group cursor-grab">
+                            <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs"></i>
+                            <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()">
+                            <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200 shrink-0">${colLeads.length}</span>
+                        </div>
+                        
+                        <div class="text-center bg-white/50 rounded-lg p-2 border border-white/60 shadow-sm mt-2">
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${colSubtitle}</p>
+                            <p class="text-sm font-black ${colSubtitleColor}">${formatMoney(colTotalValue)}</p>
+                        </div>
                     </div>
                 `;
 
                 const container = document.createElement('div');
-                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-2 pr-1';
+                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3';
                 
-                colLeads.forEach(lead => container.appendChild(createCard(lead)));
+                colLeads.forEach(lead => container.appendChild(createCard(lead, col.title)));
                 if(colLeads.length === 0) {
                     container.innerHTML = `<div class="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">Vazio</div>`;
                 }
@@ -205,101 +210,36 @@
                 boardEl.appendChild(colEl);
             });
 
+            // Botão Adicionar Coluna
             const addColBtn = document.createElement('div');
-            addColBtn.className = 'shrink-0 mt-2';
-            addColBtn.innerHTML = `
-                <button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-14 flex items-center justify-center shadow-sm" title="Nova Coluna">
-                    <i class="fa-solid fa-plus text-xl"></i>
-                </button>
-            `;
+            addColBtn.className = 'shrink-0';
+            addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full min-h-[100px] flex items-center justify-center shadow-sm"><i class="fa-solid fa-plus text-xl"></i></button>`;
             boardEl.appendChild(addColBtn);
             applySearchHighlight();
         }
 
-        // --- DASHBOARD ---
-        function updateDashboard() {
-            const totalLeads = leadsData.length;
-            document.getElementById('dashTotalLeads').innerText = totalLeads;
-            const metricsContainer = document.getElementById('dashMetrics');
-            const progressContainer = document.getElementById('dashProgressBar');
-            metricsContainer.innerHTML = '';
-            progressContainer.innerHTML = '';
-
-            if (totalLeads === 0) { metricsContainer.innerHTML = '<p class="text-xs text-slate-400 mt-4">Sem dados.</p>'; return; }
-
-            columnsData.forEach((col, index) => {
-                const count = leadsData.filter(l => l.columnId === col.id).length;
-                const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
-                const colorTheme = columnColors[index % columnColors.length];
-
-                metricsContainer.innerHTML += `
-                    <div class="flex flex-col bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm shrink-0 min-w-[90px]">
-                        <div class="flex items-center gap-1.5 mb-1">
-                            <span class="w-2 h-2 rounded-full ${colorTheme.bg}"></span>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase truncate max-w-[80px]" title="${col.title}">${col.title}</span>
-                        </div>
-                        <div class="flex items-baseline justify-between gap-3">
-                            <span class="text-xl font-black text-slate-800 leading-none">${count}</span>
-                            <span class="text-[9px] font-bold ${colorTheme.text} ${colorTheme.lightBg} px-1.5 py-0.5 rounded-md">${percentage}%</span>
-                        </div>
-                    </div>
-                `;
-
-                if (count > 0) {
-                    progressContainer.innerHTML += `<div class="${colorTheme.bg} h-full transition-all duration-500" style="width: ${percentage}%" title="${col.title}"></div>`;
-                }
-            });
-        }
-
-        // Lógica de Reordenação Definitiva de Colunas
-        async function reorderColumns(sourceId, targetId) {
-            const newCols = [...columnsData];
-            const srcIdx = newCols.findIndex(c => c.id === sourceId);
-            const tgtIdx = newCols.findIndex(c => c.id === targetId);
-            
-            const [movedCol] = newCols.splice(srcIdx, 1);
-            newCols.splice(tgtIdx, 0, movedCol);
-
-            // Atualiza o Firebase em Batch (Lote) para mudar todas as ordens de uma vez
-            const batch = db.batch();
-            newCols.forEach((col, idx) => {
-                const ref = db.collection('columns').doc(col.id);
-                batch.update(ref, { order: idx + 1 });
-            });
-            await batch.commit();
-        }
-
-        window.addNewColumn = async () => {
-            const title = prompt("Qual o nome da nova coluna?");
-            if(title && title.trim()) {
-                const newId = 'col-' + Date.now();
-                await db.collection('columns').doc(newId).set({ id: newId, title: title.trim(), order: columnsData.length + 1 });
-            }
-        };
-
-        window.updateColumn = async (id, newTitle) => {
-            if(newTitle.trim()) await db.collection('columns').doc(id).update({ title: newTitle.trim() });
-        };
-
         // ==========================================
-        // 4. CARTÃO E OCR
+        // GERAÇÃO DO CARTÃO
         // ==========================================
-        function createCard(lead) {
+        function createCard(lead, columnTitle) {
             const isExpanded = expandedLeads.has(lead.id);
+            const isFechado = columnTitle.trim().toLowerCase() === 'fechado';
+            const valueColorClass = isFechado ? 'text-blue-600' : 'text-green-600';
+            const valueBgClass = isFechado ? 'bg-blue-50 border-blue-100 focus-within:border-blue-300' : 'bg-green-50 border-green-100 focus-within:border-green-300';
+
             const card = document.createElement('div');
             card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative`;
             card.draggable = true;
             card.dataset.leadId = lead.id;
 
             card.addEventListener('dragstart', function(e) {
-                e.stopPropagation(); // Impede que arraste a coluna quando arrasta o card
+                e.stopPropagation(); 
                 draggedLeadId = this.dataset.leadId;
                 setTimeout(() => this.classList.add('card-ghost'), 0);
             });
             card.addEventListener('dragend', function(e) {
                 e.stopPropagation();
-                this.classList.remove('card-ghost'); 
-                draggedLeadId = null; 
+                this.classList.remove('card-ghost'); draggedLeadId = null; 
             });
 
             const formatDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '-';
@@ -309,9 +249,9 @@
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-2 w-[80%]">
                         <i class="fa-solid fa-grip-vertical text-slate-300"></i>
-                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded edit-name" value="${lead.name}">
+                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded edit-name truncate" value="${lead.name}">
                     </div>
-                    <button class="text-slate-400 hover:text-blue-600 transition toggle-expand bg-slate-50 rounded-full w-7 h-7 flex items-center justify-center">
+                    <button class="text-slate-400 hover:text-blue-600 transition toggle-expand bg-slate-50 rounded-full w-7 h-7 flex items-center justify-center shrink-0">
                         <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-list'}"></i>
                     </button>
                 </div>
@@ -319,13 +259,18 @@
                 <div class="space-y-2 mb-3">
                     <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300">
                         <i class="fa-solid fa-phone text-xs text-slate-400 mr-2 phone-icon"></i>
-                        <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm text-slate-600" value="${lead.phone || ''}" placeholder="Cole o Print aqui...">
+                        <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm text-slate-600" value="${lead.phone || ''}" placeholder="Celular (Print/Digite)">
                     </div>
                     
                     <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300">
                         <i class="fa-solid fa-location-dot text-xs text-slate-400 mr-2"></i>
                         <input type="text" class="w-full text-xs text-slate-500 bg-transparent focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço...">
                         <button class="text-slate-400 hover:text-blue-500 transition ml-1 px-1 map-btn" title="Abrir no Google Maps"><i class="fa-solid fa-map-location-dot"></i></button>
+                    </div>
+
+                    <div class="flex items-center rounded px-2 py-1 border transition-colors ${valueBgClass}">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">Valor:</span>
+                        <input type="text" class="edit-deal-value bg-transparent w-full focus:outline-none text-sm font-black ${valueColorClass} text-right" value="${formatMoney(lead.dealValue)}" title="Edite o valor deste negócio">
                     </div>
                 </div>
 
@@ -335,9 +280,9 @@
                         <button class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold delete-btn"><i class="fa-regular fa-trash-can"></i> Excluir</button>
                     </div>
                     <div class="max-h-40 overflow-y-auto custom-scrollbar mb-3 space-y-3">
-                        ${(lead.history || []).length > 0 ? lead.history.map((h, index) => `
+                        ${(lead.history || []).length > 0 ? lead.history.map((h, idx) => `
                             <div class="history-item text-xs">
-                                <textarea class="w-full bg-slate-50 border-none focus:ring-0 p-1 rounded edit-history-item resize-none min-h-[40px]" data-index="${index}">${h.text}</textarea>
+                                <textarea class="w-full bg-slate-50 border-none focus:ring-0 p-1 rounded edit-history-item resize-none min-h-[40px]" data-index="${idx}">${h.text}</textarea>
                                 <div class="flex justify-between text-[9px] text-slate-400 mt-1 italic px-1">
                                     <span>${formatDate(h.createdAt)} ${formatTime(h.createdAt)}</span>
                                     ${h.updatedAt ? `<span>Edit: ${formatDate(h.updatedAt)}</span>` : ''}
@@ -356,22 +301,40 @@
                 </button>
             `;
 
-            // Eventos do Cartão
+            // Lógica Valor do Negócio (Formatação Automática)
+            const dealInput = card.querySelector('.edit-deal-value');
+            dealInput.addEventListener('input', (e) => {
+                let val = e.target.value.replace(/\D/g, '');
+                if(!val) val = '0';
+                e.target.value = formatMoney(parseFloat(val) / 100);
+            });
+            dealInput.addEventListener('blur', (e) => {
+                let val = e.target.value.replace(/\D/g, '');
+                let raw = val ? parseFloat(val) / 100 : 0;
+                updateField(lead.id, 'dealValue', raw);
+                setTimeout(renderBoard, 100); // Atualiza os totais nas colunas
+            });
+
+            // Demais Eventos
             card.querySelector('.toggle-expand').onclick = () => { isExpanded ? expandedLeads.delete(lead.id) : expandedLeads.add(lead.id); renderBoard(); };
             card.querySelector('.edit-name').onblur = (e) => updateField(lead.id, 'name', e.target.value);
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
-            
-            // Lógica do Botão do Mapa
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`, '_blank');
-                else alert('Por favor, preencha o endereço para abrir o mapa.');
+                if(addr) window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(addr)}`, '_blank');
+                else alert('Por favor, preencha o endereço.');
             };
 
+            // Formatação do Celular no Cartão
             const phoneInput = card.querySelector('.edit-phone');
             const phoneIcon = card.querySelector('.phone-icon');
-            
+            phoneInput.addEventListener('input', function(e) {
+                let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+                e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+            });
             phoneInput.onblur = (e) => { updateField(lead.id, 'phone', e.target.value); setTimeout(renderBoard, 100); };
+            
+            // Colagem de Print OCR
             phoneInput.addEventListener('paste', async (e) => {
                 const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
                 if (item) {
@@ -379,96 +342,106 @@
                     phoneIcon.className = "fa-solid fa-circle-notch fa-spin text-xs text-blue-500 mr-2";
                     try {
                         const res = await Tesseract.recognize(item.getAsFile(), 'por');
-                        const text = res.data.text;
-                        const phoneMatch = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/);
+                        const phoneMatch = res.data.text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/);
                         if(phoneMatch) {
-                            phoneInput.value = phoneMatch[0];
-                            await updateField(lead.id, 'phone', phoneMatch[0]);
+                            let cleanNum = phoneMatch[0].replace(/\D/g, '');
+                            let formatted = cleanNum;
+                            if(cleanNum.length >= 10) {
+                                let m = cleanNum.match(/(\d{2})(\d{4,5})(\d{4})/);
+                                if(m) formatted = `(${m[1]}) ${m[2]}-${m[3]}`;
+                            }
+                            phoneInput.value = formatted;
+                            await updateField(lead.id, 'phone', formatted);
                         }
-                    } catch(err) { console.error(err); } finally {
+                    } catch(err) {} finally {
                         phoneIcon.className = "fa-solid fa-phone text-xs text-slate-400 mr-2";
                         setTimeout(renderBoard, 100);
                     }
                 }
             });
 
-            // Restantes botões (Notas, Excluir, WhatsApp)
-            const addNoteBtn = card.querySelector('.add-note-btn');
-            if(addNoteBtn) {
-                addNoteBtn.onclick = async () => {
-                    const val = card.querySelector('.new-note-input').value;
-                    if(!val.trim()) return;
-                    const newHistory = lead.history || [];
-                    newHistory.push({ text: val, createdAt: Date.now(), updatedAt: null });
-                    await updateField(lead.id, 'history', newHistory);
-                };
-            }
-
-            card.querySelectorAll('.edit-history-item').forEach(area => {
-                area.onblur = async (e) => {
-                    const idx = e.target.dataset.index;
-                    const newHistory = [...lead.history];
-                    if(newHistory[idx].text === e.target.value) return;
-                    newHistory[idx].text = e.target.value;
-                    newHistory[idx].updatedAt = Date.now();
-                    await updateField(lead.id, 'history', newHistory);
-                };
-            });
-
-            card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead permanentemente?') && db.collection('leads').doc(lead.id).delete();
             card.querySelector('.whatsapp-btn').onclick = () => {
                 if(!lead.phone) return;
                 let num = lead.phone.replace(/\D/g, '');
                 if (num.length >= 10 && !num.startsWith('55')) num = '55' + num;
                 window.open(`https://api.whatsapp.com/send?phone=${num}`, '_blank');
             };
-
+            
+            card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead?') && db.collection('leads').doc(lead.id).delete();
+            
             return card;
         }
 
+        // ==========================================
+        // FUNÇÕES GERAIS E DRAG & DROP
+        // ==========================================
         async function updateField(id, field, val) { await db.collection('leads').doc(id).update({ [field]: val }); }
 
         function handleDrop(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Impede propagação indesejada
+            e.preventDefault(); e.stopPropagation();
             this.classList.remove('bg-slate-300/40');
             const targetColId = this.dataset.colId;
 
-            // Se for um LEAD sendo arrastado
             if (draggedLeadId) {
                 updateField(draggedLeadId, 'columnId', targetColId);
-            } 
-            // Se for uma COLUNA sendo arrastada
-            else if (draggedColId && draggedColId !== targetColId) {
+            } else if (draggedColId && draggedColId !== targetColId) {
                 reorderColumns(draggedColId, targetColId);
             }
         }
 
-        // ==========================================
-        // 5. EVENTOS GLOBAIS E FERRAMENTAS
-        // ==========================================
-        
-        // Busca
-        searchInput.addEventListener('input', (e) => { currentSearchTerm = e.target.value.toLowerCase().trim(); applySearchHighlight(); });
-        function applySearchHighlight() {
-            document.querySelectorAll('.edit-name').forEach(input => {
-                if (currentSearchTerm && input.value.toLowerCase().includes(currentSearchTerm)) {
-                    input.classList.add('highlight-match');
-                    input.classList.remove('text-slate-800', 'bg-transparent');
-                } else {
-                    input.classList.remove('highlight-match');
-                    input.classList.add('text-slate-800', 'bg-transparent');
-                }
+        async function reorderColumns(sourceId, targetId) {
+            const newCols = [...columnsData];
+            const srcIdx = newCols.findIndex(c => c.id === sourceId);
+            const tgtIdx = newCols.findIndex(c => c.id === targetId);
+            const [movedCol] = newCols.splice(srcIdx, 1);
+            newCols.splice(tgtIdx, 0, movedCol);
+
+            const batch = db.batch();
+            newCols.forEach((col, idx) => {
+                const ref = db.collection('columns').doc(col.id);
+                batch.update(ref, { order: idx + 1 });
+            });
+            await batch.commit();
+        }
+
+        // Dashboard Restante
+        function updateDashboard() {
+            const totalLeads = leadsData.length;
+            document.getElementById('dashTotalLeads').innerText = totalLeads;
+            const metricsContainer = document.getElementById('dashMetrics');
+            const progressContainer = document.getElementById('dashProgressBar');
+            metricsContainer.innerHTML = ''; progressContainer.innerHTML = '';
+            if (totalLeads === 0) return;
+
+            columnsData.forEach((col, index) => {
+                const count = leadsData.filter(l => l.columnId === col.id).length;
+                const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
+                const colorTheme = columnColors[index % columnColors.length];
+                metricsContainer.innerHTML += `<div class="flex flex-col bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm shrink-0 min-w-[90px]"><div class="flex items-center gap-1.5 mb-1"><span class="w-2 h-2 rounded-full ${colorTheme.bg}"></span><span class="text-[9px] font-bold text-slate-500 uppercase truncate max-w-[80px]">${col.title}</span></div><div class="flex items-baseline justify-between gap-3"><span class="text-xl font-black text-slate-800 leading-none">${count}</span><span class="text-[9px] font-bold ${colorTheme.text} ${colorTheme.lightBg} px-1.5 py-0.5 rounded-md">${percentage}%</span></div></div>`;
+                if (count > 0) progressContainer.innerHTML += `<div class="${colorTheme.bg} h-full transition-all duration-500" style="width: ${percentage}%"></div>`;
             });
         }
 
-        // Paste Geral
-        const pasteInitial = document.getElementById('pasteInitialState');
-        const pasteProcessing = document.getElementById('pasteProcessingState');
+        // Formulário Manual com Máscara
+        const manualPhoneInput = document.getElementById('manualPhone');
+        manualPhoneInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+        document.getElementById('manualForm').onsubmit = (e) => {
+            e.preventDefault();
+            db.collection('leads').add({ name: document.getElementById('manualName').value, phone: manualPhoneInput.value, address: '', dealValue: 0, columnId: columnsData[0].id, createdAt: Date.now(), history: [] });
+            document.getElementById('manualName').value = ''; manualPhoneInput.value = '';
+        };
+
+        // Outros: Pesquisa e OCR
+        searchInput.addEventListener('input', (e) => { currentSearchTerm = e.target.value.toLowerCase().trim(); applySearchHighlight(); });
+        function applySearchHighlight() { document.querySelectorAll('.edit-name').forEach(input => { if (currentSearchTerm && input.value.toLowerCase().includes(currentSearchTerm)) { input.classList.add('highlight-match'); input.classList.remove('text-slate-800', 'bg-transparent'); } else { input.classList.remove('highlight-match'); input.classList.add('text-slate-800', 'bg-transparent'); } }); }
+        
         document.getElementById('pasteZone').onpaste = async (e) => {
             const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
             if (item) {
-                pasteInitial.classList.add('hidden'); pasteProcessing.classList.remove('hidden'); pasteProcessing.classList.add('flex');
+                document.getElementById('pasteInitialState').classList.add('hidden'); document.getElementById('pasteProcessingState').classList.remove('hidden'); document.getElementById('pasteProcessingState').classList.add('flex');
                 try {
                     const res = await Tesseract.recognize(item.getAsFile(), 'por');
                     const text = res.data.text;
@@ -476,33 +449,9 @@
                     let name = lines[0]?.toLowerCase().includes('pet') ? lines[1] : lines[0];
                     let phone = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/)?.[0] || '';
                     let addr = lines.find(l => l.match(/rua|av|praça|centro/i)) || '';
-                    await db.collection('leads').add({ name: name || 'Novo Lead', phone: phone, address: addr, columnId: columnsData[0].id, createdAt: Date.now(), history: [{ text: "Criado via Print.", createdAt: Date.now() }] });
-                } finally { pasteInitial.classList.remove('hidden'); pasteProcessing.classList.add('hidden'); }
+                    await db.collection('leads').add({ name: name || 'Novo Lead', phone: phone, address: addr, dealValue: 0, columnId: columnsData[0].id, createdAt: Date.now(), history: [{ text: "Criado via Print.", createdAt: Date.now() }] });
+                } finally { document.getElementById('pasteInitialState').classList.remove('hidden'); document.getElementById('pasteProcessingState').classList.add('hidden'); }
             }
-        };
-
-        // Formatação Automática do Telefone no Formulário Manual
-        const manualPhoneInput = document.getElementById('manualPhone');
-        manualPhoneInput.addEventListener('input', function(e) {
-            // Remove tudo o que não for número e aplica a máscara (XX) XXXXX-XXXX
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
-            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
-        });
-
-        // Submissão do Formulário Manual
-        document.getElementById('manualForm').onsubmit = (e) => {
-            e.preventDefault();
-            const nameInput = document.getElementById('manualName');
-            db.collection('leads').add({ 
-                name: nameInput.value, 
-                phone: manualPhoneInput.value, 
-                address: '',
-                columnId: columnsData[0].id, 
-                createdAt: Date.now(), 
-                history: [] 
-            });
-            nameInput.value = '';
-            manualPhoneInput.value = '';
         };
     </script>
 </body>
