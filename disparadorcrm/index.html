@@ -6,17 +6,17 @@
     <title>Disparador WhatsApp - CRM Pet Shops</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; } /* Mesmo fundo do CRM */
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .alerta-piscar { animation: piscar 2s infinite; }
+        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
@@ -25,9 +25,8 @@
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-slate-800">
                 <i class="fa-solid fa-paper-plane mr-2 text-blue-600"></i>Disparador WhatsApp 
-                <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">Integrado</span>
+                <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">Integrado v3.1</span>
             </h1>
-            
             <a href="../" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm border border-slate-200">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Kanban
             </a>
@@ -36,10 +35,17 @@
 
     <div class="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar flex flex-col lg:flex-row gap-6">
         
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 w-full lg:w-1/2 flex flex-col h-full min-h-[500px]">
-            <p class="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">Importe contatos do seu Kanban ou cole os números manualmente para iniciar os disparos.</p>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 w-full lg:w-1/2 flex flex-col h-full min-h-[550px]">
+            
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-2">
+                    <i class="fa-solid fa-shield-halved mr-1"></i> Trava de Segurança: Quem está a enviar?
+                </label>
+                <input type="text" id="numeroRemetente" placeholder="Ex: (33) 99999-9999 (Número da Loja)" class="w-full border border-amber-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-700 font-bold" required>
+                <p class="text-[10px] text-amber-700 mt-1">Este campo não muda o seu WhatsApp, serve apenas como alerta visual para evitar disparos pela conta errada.</p>
+            </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
                 <label class="block text-[10px] font-bold text-blue-800 uppercase tracking-wide mb-2"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Importar Coluna do CRM</label>
                 <div class="flex gap-2">
                     <select id="colunaSelect" class="flex-1 border border-blue-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700">
@@ -53,13 +59,13 @@
 
             <div class="flex-1 flex flex-col gap-4">
                 <div class="flex-1 flex flex-col">
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Lista de Números</label>
-                    <textarea id="listaNumeros" placeholder="Os números do CRM aparecerão aqui...\nEx: (33) 99999-9999" class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm custom-scrollbar resize-none"></textarea>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Lista de Números Destino</label>
+                    <textarea id="listaNumeros" placeholder="Os números do CRM aparecerão aqui...\nEx: (33) 99999-9999" class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar resize-none"></textarea>
                 </div>
 
                 <div class="flex-1 flex flex-col">
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Mensagem Padrão</label>
-                    <textarea id="mensagemPadrao" placeholder="Olá! Vi o seu Pet Shop e gostaria de apresentar uma novidade..." class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm custom-scrollbar resize-none"></textarea>
+                    <textarea id="mensagemPadrao" placeholder="Olá! Vi o seu Pet Shop e gostaria de apresentar uma novidade..." class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar resize-none"></textarea>
                 </div>
             </div>
 
@@ -68,9 +74,9 @@
             </button>
         </div>
 
-        <div id="actionSection" class="bg-slate-50 p-6 rounded-2xl shadow-inner border border-slate-200 w-full lg:w-1/2 flex flex-col h-full relative opacity-50 pointer-events-none transition-opacity duration-300 min-h-[500px]">
+        <div id="actionSection" class="bg-slate-50 p-6 rounded-2xl shadow-inner border border-slate-200 w-full lg:w-1/2 flex flex-col h-full relative opacity-50 pointer-events-none transition-opacity duration-300 min-h-[550px]">
             
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-layer-group mr-2 text-slate-400"></i>Fila de Envio</h2>
                 <div class="flex items-center gap-3">
                     <span id="contadorFila" class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">0 / 0</span>
@@ -78,6 +84,10 @@
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
+            </div>
+
+            <div id="alertaRemetente" class="hidden bg-amber-100 text-amber-800 border border-amber-300 p-3 rounded-lg text-sm mb-4 font-bold text-center alerta-piscar">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> VERIFIQUE: O seu WhatsApp logado no PC deve ser o <span id="displayRemetente" class="underline"></span>
             </div>
 
             <div id="listaVisual" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-6 bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
@@ -96,9 +106,7 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO FIREBASE (As mesmas do CRM)
-        // ==========================================
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -107,82 +115,46 @@
             messagingSenderId: "381013124221",
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
-
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ==========================================
-        // LÓGICA DE INTEGRAÇÃO COM O CRM
-        // ==========================================
+        // INTEGRAÇÃO CRM
         async function carregarColunasCRM() {
             try {
                 const snap = await db.collection('columns').orderBy('order').get();
                 const select = document.getElementById('colunaSelect');
-                
-                if (snap.empty) {
-                    select.innerHTML = '<option value="">Nenhuma coluna encontrada no CRM.</option>';
-                    return;
-                }
-
+                if (snap.empty) { select.innerHTML = '<option value="">Nenhuma coluna encontrada no CRM.</option>'; return; }
                 select.innerHTML = '<option value="">-- Escolha uma Coluna do CRM --</option>';
-                snap.forEach(doc => {
-                    const col = doc.data();
-                    select.innerHTML += `<option value="${col.id}">${col.title}</option>`;
-                });
-            } catch (error) {
-                console.error("Erro ao carregar colunas:", error);
-                document.getElementById('colunaSelect').innerHTML = '<option value="">Erro ao conectar ao CRM</option>';
-            }
+                snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().id}">${doc.data().title}</option>`; });
+            } catch (error) { console.error(error); }
         }
         carregarColunasCRM();
 
         async function importarDoCRM(event) {
             const select = document.getElementById('colunaSelect');
             const colId = select.value;
-            const colNome = select.options[select.selectedIndex].text;
+            if (!colId) { alert("Selecione uma coluna!"); return; }
 
-            if (!colId) {
-                alert("Por favor, selecione uma coluna primeiro!");
-                return;
-            }
-
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
             try {
-                const btn = event.currentTarget;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                
                 const snap = await db.collection('leads').where('columnId', '==', colId).get();
-                
                 let extracao = [];
                 snap.forEach(doc => {
                     const lead = doc.data();
-                    if (lead.phone && lead.phone.trim() !== '') {
-                        extracao.push(`${lead.name} - ${lead.phone}`);
-                    }
+                    if (lead.phone && lead.phone.trim() !== '') extracao.push(`${lead.name} - ${lead.phone}`);
                 });
 
+                if (extracao.length === 0) { alert(`Sem Leads com telefone nesta coluna.`); } 
+                else { document.getElementById('listaNumeros').value = extracao.join('\n'); }
+            } finally {
                 btn.innerHTML = originalText;
-
-                if (extracao.length === 0) {
-                    alert(`Não foram encontrados Leads com telefone na coluna "${colNome}".`);
-                    return;
-                }
-
-                const textArea = document.getElementById('listaNumeros');
-                textArea.value = extracao.join('\n');
-                
-                textArea.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
-                setTimeout(() => textArea.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50'), 800);
-
-            } catch (error) {
-                console.error("Erro ao importar leads:", error);
-                alert("Erro ao puxar dados. Verifique a consola.");
             }
         }
 
-        // ==========================================
         // LÓGICA DO DISPARADOR
-        // ==========================================
         let filaDeNumeros = [];
         let nomesAssociados = [];
         let indiceAtual = 0;
@@ -192,29 +164,26 @@
         const listaVisual = document.getElementById('listaVisual');
         const btnDisparar = document.getElementById('btnDisparar');
         const contadorFila = document.getElementById('contadorFila');
+        const alertaRemetente = document.getElementById('alertaRemetente');
+        const displayRemetente = document.getElementById('displayRemetente');
 
         function prepararFila() {
+            const remetente = document.getElementById('numeroRemetente').value.trim();
             const rawText = document.getElementById('listaNumeros').value;
             const rawMsg = document.getElementById('mensagemPadrao').value;
 
+            if (!remetente) { alert("SEGURANÇA: Por favor, preencha qual o SEU número (Remetente) antes de começar."); return; }
             if (!rawText.trim()) { alert("Por favor, importe ou cole a lista de números."); return; }
 
             const linhas = rawText.split('\n');
-            filaDeNumeros = [];
-            nomesAssociados = [];
+            filaDeNumeros = []; nomesAssociados = [];
 
             linhas.forEach(linha => {
                 let apenasNumeros = linha.replace(/\D/g, '');
                 if (apenasNumeros.length >= 10) {
                     if (!apenasNumeros.startsWith('55')) apenasNumeros = '55' + apenasNumeros;
-                    
-                    let nome = "Contato";
-                    if(linha.includes('-')) {
-                        nome = linha.split('-')[0].trim();
-                    }
-                    
-                    filaDeNumeros.push(apenasNumeros);
-                    nomesAssociados.push(nome);
+                    let nome = linha.includes('-') ? linha.split('-')[0].trim() : "Contato";
+                    filaDeNumeros.push(apenasNumeros); nomesAssociados.push(nome);
                 }
             });
 
@@ -223,7 +192,11 @@
             mensagemCodificada = encodeURIComponent(rawMsg);
             indiceAtual = 0;
 
+            // Ativa Painel e Mostra Alerta de Segurança
             painelAcao.classList.remove('opacity-50', 'pointer-events-none');
+            alertaRemetente.classList.remove('hidden');
+            displayRemetente.innerText = remetente;
+
             desenharListaVisual();
             atualizarBotoes();
         }
@@ -248,38 +221,24 @@
 
         function atualizarBotoes() {
             contadorFila.innerText = `${indiceAtual} / ${filaDeNumeros.length}`;
-
             if (indiceAtual < filaDeNumeros.length) {
                 btnDisparar.disabled = false;
-                btnDisparar.classList.remove('bg-slate-400');
-                btnDisparar.classList.add('bg-[#25D366]', 'hover:bg-[#1da851]');
-                btnDisparar.innerHTML = `
-                    <span class="flex items-center gap-2 text-lg"><i class="fa-brands fa-whatsapp"></i> Enviar para: ${nomesAssociados[indiceAtual]}</span>
-                    <span class="text-xs font-normal opacity-90 mt-1 tracking-wider">+${filaDeNumeros[indiceAtual]}</span>
-                `;
-                
+                btnDisparar.classList.replace('bg-slate-800', 'bg-[#25D366]');
+                btnDisparar.innerHTML = `<span class="flex items-center gap-2 text-lg"><i class="fa-brands fa-whatsapp"></i> Enviar para: ${nomesAssociados[indiceAtual]}</span><span class="text-xs font-normal opacity-90 mt-1 tracking-wider">+${filaDeNumeros[indiceAtual]}</span>`;
                 const itemAtual = document.getElementById(`item-${indiceAtual}`);
-                if(itemAtual) {
-                    itemAtual.classList.replace('bg-slate-50', 'bg-blue-50');
-                    itemAtual.classList.replace('border-slate-100', 'border-blue-200');
-                }
+                if(itemAtual) itemAtual.classList.replace('bg-slate-50', 'bg-blue-50');
             } else {
                 btnDisparar.disabled = true;
-                btnDisparar.classList.remove('bg-[#25D366]', 'hover:bg-[#1da851]', 'shadow-green-200', 'shadow-lg');
-                btnDisparar.classList.add('bg-slate-800');
-                btnDisparar.innerHTML = `
-                    <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-check-double"></i> Disparos Concluídos!</span>
-                    <span class="text-xs font-normal opacity-80 mt-1">Todos os contatos foram processados.</span>
-                `;
+                btnDisparar.classList.replace('bg-[#25D366]', 'bg-slate-800');
+                btnDisparar.innerHTML = `<span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-check-double"></i> Concluído!</span><span class="text-xs font-normal opacity-80 mt-1">Todos processados.</span>`;
+                alertaRemetente.classList.add('hidden'); // Esconde alerta ao terminar
             }
         }
 
         function dispararProximo() {
             if (indiceAtual >= filaDeNumeros.length) return;
-
             const numeroAlvo = filaDeNumeros[indiceAtual];
-            const url = `https://api.whatsapp.com/send?phone=${numeroAlvo}&text=${mensagemCodificada}`;
-            window.open(url, '_blank');
+            window.open(`https://api.whatsapp.com/send?phone=${numeroAlvo}&text=${mensagemCodificada}`, '_blank');
 
             const itemLista = document.getElementById(`item-${indiceAtual}`);
             const icone = document.getElementById(`icon-${indiceAtual}`);
@@ -287,21 +246,15 @@
             
             if (itemLista) {
                 itemLista.classList.replace('bg-blue-50', 'bg-green-50');
-                itemLista.classList.replace('border-blue-200', 'border-green-200');
-                
                 icone.classList.replace('bg-slate-200', 'bg-green-500');
                 icone.classList.replace('text-slate-500', 'text-white');
                 icone.innerHTML = '<i class="fa-solid fa-check"></i>';
-                
                 status.innerText = "Enviado";
                 status.classList.replace('text-slate-400', 'text-green-600');
             }
-
             indiceAtual++;
-            
             const proximoItem = document.getElementById(`item-${indiceAtual}`);
             if(proximoItem) proximoItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
             atualizarBotoes();
         }
 
@@ -309,22 +262,13 @@
             if(confirm("Tem a certeza que deseja limpar tudo e recomeçar?")) {
                 document.getElementById('listaNumeros').value = "";
                 document.getElementById('colunaSelect').value = "";
-                filaDeNumeros = [];
-                nomesAssociados = [];
-                indiceAtual = 0;
+                alertaRemetente.classList.add('hidden');
+                filaDeNumeros = []; nomesAssociados = []; indiceAtual = 0;
                 
                 painelAcao.classList.add('opacity-50', 'pointer-events-none');
-                listaVisual.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
-                        <i class="fa-solid fa-inbox text-3xl mb-2 opacity-30"></i>
-                        <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
-                    </div>
-                `;
+                listaVisual.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4"><i class="fa-solid fa-inbox text-3xl mb-2 opacity-30"></i><p>Aguardando Preparação...</p></div>`;
                 contadorFila.innerText = "0 / 0";
-                btnDisparar.innerHTML = `
-                    <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
-                    <span class="text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
-                `;
+                btnDisparar.innerHTML = `<span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span><span class="text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>`;
                 btnDisparar.className = "w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200/50 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none";
                 btnDisparar.disabled = true;
             }
