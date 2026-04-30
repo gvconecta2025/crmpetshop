@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.1 PRO</title>
+    <title>CRM Pet Shops - Kanban V5.2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -19,7 +19,10 @@
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .highlight-match { background-color: #fef08a !important; color: #854d0e !important; padding: 2px 4px; border-radius: 4px; transition: all 0.3s ease; }
+        
+        /* Destaques de Pesquisa */
+        .highlight-match { background-color: #fef08a !important; color: #854d0e !important; border-radius: 4px; transition: all 0.3s ease; }
+        .active-search-match { background-color: #f97316 !important; color: #ffffff !important; box-shadow: 0 0 0 3px #fed7aa; transform: scale(1.02); z-index: 10; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
@@ -29,7 +32,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-chart-line mr-1"></i> Versão 5.1 PRO</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.2</span>
                 </h1>
                 
                 <div class="flex items-center gap-4 w-full md:w-auto">
@@ -37,9 +40,17 @@
                         <i class="fa-solid fa-paper-plane"></i> Disparador
                     </a>
 
-                    <div class="relative flex-1 md:w-64">
-                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
-                        <input type="text" id="searchInput" placeholder="Localizar Pet Shop..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all">
+                    <div class="relative flex-1 md:w-72 flex items-center bg-slate-50 border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all overflow-hidden h-10">
+                        <i class="fa-solid fa-search text-slate-400 pl-3"></i>
+                        <input type="text" id="searchInput" placeholder="Localizar Pet Shop..." class="w-full pl-2 pr-2 py-2 bg-transparent focus:outline-none text-sm">
+                        
+                        <div id="searchControls" class="hidden items-center bg-slate-100 border-l border-slate-200 px-2 h-full">
+                            <span id="searchCounter" class="text-xs font-bold text-slate-500 mr-1 min-w-[30px] text-center">0/0</span>
+                            <div class="flex flex-col">
+                                <button onclick="prevSearch()" class="text-slate-400 hover:text-blue-600 transition leading-none py-0.5 px-1"><i class="fa-solid fa-caret-up text-[12px]"></i></button>
+                                <button onclick="nextSearch()" class="text-slate-400 hover:text-blue-600 transition leading-none py-0.5 px-1"><i class="fa-solid fa-caret-down text-[12px]"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,7 +105,7 @@
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO FIREBASE
+        // CONFIGURAÇÃO FIREBASE E VARIÁVEIS
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -107,15 +118,16 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ==========================================
-        // VARIÁVEIS E CORES
-        // ==========================================
         let columnsData = [];
         let leadsData = [];
         let draggedLeadId = null;
         let draggedColId = null; 
         let expandedLeads = new Set();
+        
+        // Variáveis do Novo Motor de Pesquisa
         let currentSearchTerm = "";
+        let searchMatches = []; // Guarda os elementos HTML encontrados
+        let currentSearchIndex = -1; // Guarda qual é o match ativo atual
 
         const columnColors = [
             { bg: 'bg-blue-500', text: 'text-blue-600', dot: 'text-blue-500', lightBg: 'bg-blue-50' },
@@ -127,6 +139,8 @@
 
         const boardEl = document.getElementById('kanbanBoard');
         const searchInput = document.getElementById('searchInput');
+        const searchControls = document.getElementById('searchControls');
+        const searchCounter = document.getElementById('searchCounter');
 
         // Escutar Dados
         db.collection('columns').orderBy('order').onSnapshot(snap => {
@@ -139,10 +153,7 @@
             renderBoard();
         });
 
-        // Formatação de Moeda
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
-
-        // Função de Scroll ao Topo (Injetada no HTML das colunas)
         window.scrollToTop = (colId) => {
             const container = document.querySelector(`.kanban-scroll-container[data-col-id="${colId}"]`);
             if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
@@ -154,7 +165,6 @@
         function renderBoard() {
             if(columnsData.length === 0) return;
 
-            // 1. CAPTURAR MEMÓRIA DE SCROLL ANTES DE APAGAR O QUADRO
             const scrollPositions = {};
             document.querySelectorAll('.kanban-scroll-container').forEach(container => {
                 scrollPositions[container.dataset.colId] = container.scrollTop;
@@ -163,7 +173,6 @@
             boardEl.innerHTML = '';
             updateDashboard();
             
-            // LÓGICA DE RESPONSIVIDADE DAS COLUNAS (Até 8 = Fit, 9+ = Scroll)
             const isFitMode = columnsData.length <= 8;
             const columnWidthClass = isFitMode ? 'flex-1 min-w-[200px] max-w-[400px]' : 'w-80 shrink-0';
 
@@ -172,7 +181,6 @@
                 colEl.className = `kanban-col ${columnWidthClass} bg-slate-200/60 rounded-2xl flex flex-col border border-slate-200 h-[calc(100vh-270px)] transition-colors`;
                 colEl.dataset.colId = col.id;
                 
-                // Eventos Coluna
                 colEl.draggable = true;
                 colEl.addEventListener('dragstart', function(e) {
                     if (e.target === colEl) {
@@ -189,7 +197,6 @@
                 const colLeads = leadsData.filter(l => l.columnId === col.id);
                 const colorTheme = columnColors[index % columnColors.length];
                 
-                // CALCULO DO FATURAMENTO DA COLUNA
                 const isFechado = col.title.trim().toLowerCase() === 'fechado';
                 const colTotalValue = colLeads.reduce((acc, l) => acc + (parseFloat(l.dealValue) || 0), 0);
                 const colSubtitle = isFechado ? 'Faturamento Atual' : 'Faturamento Possível';
@@ -200,14 +207,11 @@
                         <div class="flex justify-between items-center mb-2 group cursor-grab">
                             <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs"></i>
                             <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()">
-                            
                             <button onclick="scrollToTop('${col.id}')" class="text-slate-300 hover:text-blue-500 transition px-1 ml-auto" title="Subir ao topo">
                                 <i class="fa-solid fa-arrow-up text-[10px]"></i>
                             </button>
-                            
                             <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200 shrink-0">${colLeads.length}</span>
                         </div>
-                        
                         <div class="text-center bg-white/50 rounded-lg p-2 border border-white/60 shadow-sm mt-2">
                             <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${colSubtitle}</p>
                             <p class="text-sm font-black ${colSubtitleColor}">${formatMoney(colTotalValue)}</p>
@@ -216,32 +220,27 @@
                 `;
 
                 const container = document.createElement('div');
-                // Classe 'kanban-scroll-container' adicionada para podermos memorizar o scroll!
-                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3 kanban-scroll-container';
+                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3 kanban-scroll-container relative';
                 container.dataset.colId = col.id;
                 
                 colLeads.forEach(lead => container.appendChild(createCard(lead, col.title)));
-                if(colLeads.length === 0) {
-                    container.innerHTML = `<div class="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">Vazio</div>`;
-                }
+                if(colLeads.length === 0) container.innerHTML = `<div class="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">Vazio</div>`;
                 
                 colEl.appendChild(container);
                 boardEl.appendChild(colEl);
             });
 
-            // 2. RESTAURAR A MEMÓRIA DE SCROLL DE FORMA INVISÍVEL
             document.querySelectorAll('.kanban-scroll-container').forEach(container => {
-                if (scrollPositions[container.dataset.colId] !== undefined) {
-                    container.scrollTop = scrollPositions[container.dataset.colId];
-                }
+                if (scrollPositions[container.dataset.colId] !== undefined) container.scrollTop = scrollPositions[container.dataset.colId];
             });
 
-            // Botão Adicionar Coluna
             const addColBtn = document.createElement('div');
             addColBtn.className = 'shrink-0';
             addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full min-h-[100px] flex items-center justify-center shadow-sm"><i class="fa-solid fa-plus text-xl"></i></button>`;
             boardEl.appendChild(addColBtn);
-            applySearchHighlight();
+            
+            // Re-aplica a pesquisa sempre que o quadro atualiza para manter os highlights
+            applySearchHighlight(true);
         }
 
         // ==========================================
@@ -327,7 +326,7 @@
                 </button>
             `;
 
-            // Lógica Valor do Negócio (Formatação Automática)
+            // Lógica Valor do Negócio
             const dealInput = card.querySelector('.edit-deal-value');
             dealInput.addEventListener('input', (e) => {
                 let val = e.target.value.replace(/\D/g, '');
@@ -346,11 +345,10 @@
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(addr)}`, '_blank');
+                if(addr) window.open(`http://googleusercontent.com/maps.google.com/3{encodeURIComponent(addr)}`, '_blank');
                 else alert('Por favor, preencha o endereço.');
             };
 
-            // Formatação do Celular no Cartão
             const phoneInput = card.querySelector('.edit-phone');
             const phoneIcon = card.querySelector('.phone-icon');
             phoneInput.addEventListener('input', function(e) {
@@ -359,7 +357,6 @@
             });
             phoneInput.onblur = (e) => { updateField(lead.id, 'phone', e.target.value); };
             
-            // Colagem de Print OCR
             phoneInput.addEventListener('paste', async (e) => {
                 const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
                 if (item) {
@@ -378,9 +375,7 @@
                             phoneInput.value = formatted;
                             await updateField(lead.id, 'phone', formatted);
                         }
-                    } catch(err) {} finally {
-                        phoneIcon.className = "fa-solid fa-phone text-xs text-slate-400 mr-2";
-                    }
+                    } catch(err) {} finally { phoneIcon.className = "fa-solid fa-phone text-xs text-slate-400 mr-2"; }
                 }
             });
 
@@ -393,7 +388,6 @@
             
             card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead?') && db.collection('leads').doc(lead.id).delete();
             
-            // Notas Histórico
             const addNoteBtn = card.querySelector('.add-note-btn');
             if(addNoteBtn) {
                 addNoteBtn.onclick = async () => {
@@ -419,38 +413,27 @@
         }
 
         // ==========================================
-        // FUNÇÕES GERAIS E DRAG & DROP
+        // UTILITÁRIOS E INTEGRAÇÕES
         // ==========================================
         async function updateField(id, field, val) { await db.collection('leads').doc(id).update({ [field]: val }); }
-
         function handleDrop(e) {
             e.preventDefault(); e.stopPropagation();
             this.classList.remove('bg-slate-300/40');
             const targetColId = this.dataset.colId;
-
-            if (draggedLeadId) {
-                updateField(draggedLeadId, 'columnId', targetColId);
-            } else if (draggedColId && draggedColId !== targetColId) {
-                reorderColumns(draggedColId, targetColId);
-            }
+            if (draggedLeadId) updateField(draggedLeadId, 'columnId', targetColId);
+            else if (draggedColId && draggedColId !== targetColId) reorderColumns(draggedColId, targetColId);
         }
-
         async function reorderColumns(sourceId, targetId) {
             const newCols = [...columnsData];
             const srcIdx = newCols.findIndex(c => c.id === sourceId);
             const tgtIdx = newCols.findIndex(c => c.id === targetId);
             const [movedCol] = newCols.splice(srcIdx, 1);
             newCols.splice(tgtIdx, 0, movedCol);
-
             const batch = db.batch();
-            newCols.forEach((col, idx) => {
-                const ref = db.collection('columns').doc(col.id);
-                batch.update(ref, { order: idx + 1 });
-            });
+            newCols.forEach((col, idx) => { batch.update(db.collection('columns').doc(col.id), { order: idx + 1 }); });
             await batch.commit();
         }
 
-        // Dashboard Restante
         function updateDashboard() {
             const totalLeads = leadsData.length;
             document.getElementById('dashTotalLeads').innerText = totalLeads;
@@ -468,7 +451,75 @@
             });
         }
 
-        // Formulário Manual com Máscara
+        // ==========================================
+        // 5. MOTOR DE PESQUISA INTELIGENTE (NOVO)
+        // ==========================================
+        searchInput.addEventListener('input', (e) => { 
+            currentSearchTerm = e.target.value.toLowerCase().trim(); 
+            applySearchHighlight(); 
+        });
+
+        function applySearchHighlight(isReRender = false) { 
+            searchMatches = [];
+            
+            document.querySelectorAll('.edit-name').forEach(input => { 
+                input.classList.remove('highlight-match', 'active-search-match'); 
+                input.classList.add('text-slate-800', 'bg-transparent'); 
+                
+                if (currentSearchTerm && input.value.toLowerCase().includes(currentSearchTerm)) { 
+                    input.classList.add('highlight-match'); 
+                    input.classList.remove('text-slate-800', 'bg-transparent'); 
+                    searchMatches.push(input);
+                } 
+            });
+
+            if (searchMatches.length > 0) {
+                searchControls.classList.remove('hidden');
+                searchControls.classList.add('flex');
+                
+                // Se for a primeira vez que digita, foca no índice 0. Se for um re-render, mantém o foco.
+                if(!isReRender || currentSearchIndex === -1 || currentSearchIndex >= searchMatches.length) {
+                    currentSearchIndex = 0;
+                }
+                focusSearchMatch(currentSearchIndex);
+            } else {
+                if (currentSearchTerm) {
+                    searchControls.classList.remove('hidden');
+                    searchControls.classList.add('flex');
+                    searchCounter.innerText = "0/0";
+                } else {
+                    searchControls.classList.add('hidden');
+                    searchControls.classList.remove('flex');
+                    currentSearchIndex = -1;
+                }
+            }
+        }
+
+        function focusSearchMatch(index) {
+            if (searchMatches.length === 0) return;
+            
+            // Loop infinito (se chegar ao fim, volta ao primeiro e vice-versa)
+            if (index < 0) index = searchMatches.length - 1;
+            if (index >= searchMatches.length) index = 0;
+            
+            currentSearchIndex = index;
+            searchCounter.innerText = `${currentSearchIndex + 1}/${searchMatches.length}`;
+            
+            searchMatches.forEach(el => el.classList.remove('active-search-match'));
+            
+            const activeEl = searchMatches[currentSearchIndex];
+            activeEl.classList.add('active-search-match');
+            
+            // Scroll suave e centralizado para o cartão selecionado
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        window.prevSearch = () => focusSearchMatch(currentSearchIndex - 1);
+        window.nextSearch = () => focusSearchMatch(currentSearchIndex + 1);
+
+        // ==========================================
+        // EVENTOS GERAIS
+        // ==========================================
         const manualPhoneInput = document.getElementById('manualPhone');
         manualPhoneInput.addEventListener('input', function(e) {
             let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
@@ -480,14 +531,12 @@
             document.getElementById('manualName').value = ''; manualPhoneInput.value = '';
         };
 
-        // Outros: Pesquisa e OCR
-        searchInput.addEventListener('input', (e) => { currentSearchTerm = e.target.value.toLowerCase().trim(); applySearchHighlight(); });
-        function applySearchHighlight() { document.querySelectorAll('.edit-name').forEach(input => { if (currentSearchTerm && input.value.toLowerCase().includes(currentSearchTerm)) { input.classList.add('highlight-match'); input.classList.remove('text-slate-800', 'bg-transparent'); } else { input.classList.remove('highlight-match'); input.classList.add('text-slate-800', 'bg-transparent'); } }); }
-        
+        const pasteInitial = document.getElementById('pasteInitialState');
+        const pasteProcessing = document.getElementById('pasteProcessingState');
         document.getElementById('pasteZone').onpaste = async (e) => {
             const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
             if (item) {
-                document.getElementById('pasteInitialState').classList.add('hidden'); document.getElementById('pasteProcessingState').classList.remove('hidden'); document.getElementById('pasteProcessingState').classList.add('flex');
+                pasteInitial.classList.add('hidden'); pasteProcessing.classList.remove('hidden'); pasteProcessing.classList.add('flex');
                 try {
                     const res = await Tesseract.recognize(item.getAsFile(), 'por');
                     const text = res.data.text;
@@ -496,7 +545,7 @@
                     let phone = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/)?.[0] || '';
                     let addr = lines.find(l => l.match(/rua|av|praça|centro/i)) || '';
                     await db.collection('leads').add({ name: name || 'Novo Lead', phone: phone, address: addr, dealValue: 0, columnId: columnsData[0].id, createdAt: Date.now(), history: [{ text: "Criado via Print.", createdAt: Date.now() }] });
-                } finally { document.getElementById('pasteInitialState').classList.remove('hidden'); document.getElementById('pasteProcessingState').classList.add('hidden'); }
+                } finally { pasteInitial.classList.remove('hidden'); pasteProcessing.classList.add('hidden'); }
             }
         };
     </script>
