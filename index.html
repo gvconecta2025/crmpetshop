@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V4.1</title>
+    <title>CRM Pet Shops - Kanban V4.2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -18,6 +18,7 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .kanban-col { min-width: 320px; }
         .card-ghost { opacity: 0.5; background-color: #e2e8f0; }
+        .col-ghost { opacity: 0.4; border: 2px dashed #94a3b8; }
         .history-item { border-left: 2px solid #e2e8f0; padding-left: 10px; margin-bottom: 10px; }
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -32,7 +33,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-white px-2 py-1 rounded ml-3 uppercase tracking-widest">Versão 4.1</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-white px-2 py-1 rounded ml-3 uppercase tracking-widest">Versão 4.2</span>
                 </h1>
                 
                 <div class="flex items-center gap-4 w-full md:w-auto">
@@ -63,27 +64,27 @@
 
                 <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-inner">
                     <div class="flex flex-col lg:flex-row justify-between lg:items-end mb-3 gap-4">
-                        
                         <div class="shrink-0">
                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Volume Total</p>
                             <p class="text-3xl font-black text-slate-800 leading-none" id="dashTotalLeads">0</p>
                         </div>
-                        
                         <div id="dashMetrics" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 items-end w-full lg:justify-end">
                             </div>
                     </div>
-                    
                     <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex" id="dashProgressBar">
                         </div>
                 </div>
 
                 <div class="w-full md:w-1/4 flex flex-col justify-center bg-white border border-slate-200 p-3 rounded-xl shadow-sm">
                     <label class="text-[10px] font-bold text-slate-400 uppercase mb-2">Novo Lead Manual</label>
-                    <form id="manualForm" class="flex gap-2">
-                        <input type="text" id="manualName" placeholder="Nome da Loja..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs" required>
-                        <button type="submit" class="bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-700 transition shadow-sm">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
+                    <form id="manualForm" class="flex flex-col gap-2">
+                        <input type="text" id="manualName" placeholder="Nome da Loja..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs font-bold" required>
+                        <div class="flex gap-2">
+                            <input type="text" id="manualPhone" placeholder="Celular..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
+                            <button type="submit" class="bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-700 transition shadow-sm text-xs font-bold shrink-0">
+                                Criar
+                            </button>
+                        </div>
                     </form>
                 </div>
 
@@ -118,10 +119,10 @@
         let columnsData = [];
         let leadsData = [];
         let draggedLeadId = null;
+        let draggedColId = null; // Para reordenar colunas
         let expandedLeads = new Set();
         let currentSearchTerm = "";
 
-        // Paleta de Cores com fundo suave para as legendas
         const columnColors = [
             { bg: 'bg-blue-500', text: 'text-blue-600', dot: 'text-blue-500', lightBg: 'bg-blue-50' },
             { bg: 'bg-red-500', text: 'text-red-600', dot: 'text-red-500', lightBg: 'bg-red-50' },
@@ -157,9 +158,25 @@
             
             columnsData.forEach((col, index) => {
                 const colEl = document.createElement('div');
-                colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-[calc(100vh-270px)] shrink-0';
+                colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-[calc(100vh-270px)] shrink-0 transition-colors';
                 colEl.dataset.colId = col.id;
                 
+                // Eventos de Drag & Drop para a COLUNA INTEIRA
+                colEl.draggable = true;
+                colEl.addEventListener('dragstart', function(e) {
+                    if (e.target === colEl) { // Garante que não está a arrastar um card
+                        draggedColId = this.dataset.colId;
+                        e.dataTransfer.effectAllowed = 'move';
+                        setTimeout(() => this.classList.add('col-ghost'), 0);
+                    }
+                });
+                colEl.addEventListener('dragend', function(e) {
+                    if (e.target === colEl) {
+                        this.classList.remove('col-ghost');
+                        draggedColId = null;
+                    }
+                });
+
                 colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.classList.add('bg-slate-300/40'); });
                 colEl.addEventListener('dragleave', () => colEl.classList.remove('bg-slate-300/40'));
                 colEl.addEventListener('drop', handleDrop);
@@ -168,9 +185,10 @@
                 const colorTheme = columnColors[index % columnColors.length];
 
                 colEl.innerHTML = `
-                    <div class="flex justify-between items-center mb-4 px-1 group">
+                    <div class="flex justify-between items-center mb-4 px-1 group cursor-grab">
+                        <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs" title="Arraste para reordenar coluna"></i>
                         <i class="fa-solid fa-circle text-[8px] ${colorTheme.dot} mr-2"></i>
-                        <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors" value="${col.title}" onblur="updateColumn('${col.id}', this.value)">
+                        <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="(e) => e.stopPropagation()">
                         <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200">${colLeads.length}</span>
                     </div>
                 `;
@@ -190,7 +208,7 @@
             const addColBtn = document.createElement('div');
             addColBtn.className = 'shrink-0 mt-2';
             addColBtn.innerHTML = `
-                <button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-14 flex items-center justify-center shadow-sm">
+                <button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-14 flex items-center justify-center shadow-sm" title="Nova Coluna">
                     <i class="fa-solid fa-plus text-xl"></i>
                 </button>
             `;
@@ -198,28 +216,22 @@
             applySearchHighlight();
         }
 
-        // --- LÓGICA DO DASHBOARD (Aprimorada) ---
+        // --- DASHBOARD ---
         function updateDashboard() {
             const totalLeads = leadsData.length;
             document.getElementById('dashTotalLeads').innerText = totalLeads;
-
             const metricsContainer = document.getElementById('dashMetrics');
             const progressContainer = document.getElementById('dashProgressBar');
-            
             metricsContainer.innerHTML = '';
             progressContainer.innerHTML = '';
 
-            if (totalLeads === 0) {
-                metricsContainer.innerHTML = '<p class="text-xs text-slate-400 mt-4">Sem dados para exibir.</p>';
-                return;
-            }
+            if (totalLeads === 0) { metricsContainer.innerHTML = '<p class="text-xs text-slate-400 mt-4">Sem dados.</p>'; return; }
 
             columnsData.forEach((col, index) => {
                 const count = leadsData.filter(l => l.columnId === col.id).length;
                 const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
                 const colorTheme = columnColors[index % columnColors.length];
 
-                // NOVO VISUAL DA LEGENDA (Mini-Cards Elegantes)
                 metricsContainer.innerHTML += `
                     <div class="flex flex-col bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm shrink-0 min-w-[90px]">
                         <div class="flex items-center gap-1.5 mb-1">
@@ -234,13 +246,28 @@
                 `;
 
                 if (count > 0) {
-                    progressContainer.innerHTML += `
-                        <div class="${colorTheme.bg} h-full transition-all duration-500" style="width: ${percentage}%" title="${col.title}: ${count} leads"></div>
-                    `;
+                    progressContainer.innerHTML += `<div class="${colorTheme.bg} h-full transition-all duration-500" style="width: ${percentage}%" title="${col.title}"></div>`;
                 }
             });
         }
-        // ---------------------------
+
+        // Lógica de Reordenação Definitiva de Colunas
+        async function reorderColumns(sourceId, targetId) {
+            const newCols = [...columnsData];
+            const srcIdx = newCols.findIndex(c => c.id === sourceId);
+            const tgtIdx = newCols.findIndex(c => c.id === targetId);
+            
+            const [movedCol] = newCols.splice(srcIdx, 1);
+            newCols.splice(tgtIdx, 0, movedCol);
+
+            // Atualiza o Firebase em Batch (Lote) para mudar todas as ordens de uma vez
+            const batch = db.batch();
+            newCols.forEach((col, idx) => {
+                const ref = db.collection('columns').doc(col.id);
+                batch.update(ref, { order: idx + 1 });
+            });
+            await batch.commit();
+        }
 
         window.addNewColumn = async () => {
             const title = prompt("Qual o nome da nova coluna?");
@@ -265,10 +292,15 @@
             card.dataset.leadId = lead.id;
 
             card.addEventListener('dragstart', function(e) {
+                e.stopPropagation(); // Impede que arraste a coluna quando arrasta o card
                 draggedLeadId = this.dataset.leadId;
                 setTimeout(() => this.classList.add('card-ghost'), 0);
             });
-            card.addEventListener('dragend', function() { this.classList.remove('card-ghost'); draggedLeadId = null; });
+            card.addEventListener('dragend', function(e) {
+                e.stopPropagation();
+                this.classList.remove('card-ghost'); 
+                draggedLeadId = null; 
+            });
 
             const formatDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '-';
             const formatTime = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
@@ -289,9 +321,11 @@
                         <i class="fa-solid fa-phone text-xs text-slate-400 mr-2 phone-icon"></i>
                         <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm text-slate-600" value="${lead.phone || ''}" placeholder="Cole o Print aqui...">
                     </div>
+                    
                     <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300">
                         <i class="fa-solid fa-location-dot text-xs text-slate-400 mr-2"></i>
                         <input type="text" class="w-full text-xs text-slate-500 bg-transparent focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço...">
+                        <button class="text-slate-400 hover:text-blue-500 transition ml-1 px-1 map-btn" title="Abrir no Google Maps"><i class="fa-solid fa-map-location-dot"></i></button>
                     </div>
                 </div>
 
@@ -322,10 +356,18 @@
                 </button>
             `;
 
+            // Eventos do Cartão
             card.querySelector('.toggle-expand').onclick = () => { isExpanded ? expandedLeads.delete(lead.id) : expandedLeads.add(lead.id); renderBoard(); };
             card.querySelector('.edit-name').onblur = (e) => updateField(lead.id, 'name', e.target.value);
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             
+            // Lógica do Botão do Mapa
+            card.querySelector('.map-btn').onclick = () => {
+                const addr = card.querySelector('.edit-address').value.trim();
+                if(addr) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`, '_blank');
+                else alert('Por favor, preencha o endereço para abrir o mapa.');
+            };
+
             const phoneInput = card.querySelector('.edit-phone');
             const phoneIcon = card.querySelector('.phone-icon');
             
@@ -350,6 +392,7 @@
                 }
             });
 
+            // Restantes botões (Notas, Excluir, WhatsApp)
             const addNoteBtn = card.querySelector('.add-note-btn');
             if(addNoteBtn) {
                 addNoteBtn.onclick = async () => {
@@ -372,7 +415,7 @@
                 };
             });
 
-            card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead?') && db.collection('leads').doc(lead.id).delete();
+            card.querySelector('.delete-btn').onclick = () => confirm('Excluir Lead permanentemente?') && db.collection('leads').doc(lead.id).delete();
             card.querySelector('.whatsapp-btn').onclick = () => {
                 if(!lead.phone) return;
                 let num = lead.phone.replace(/\D/g, '');
@@ -387,11 +430,24 @@
 
         function handleDrop(e) {
             e.preventDefault();
+            e.stopPropagation(); // Impede propagação indesejada
             this.classList.remove('bg-slate-300/40');
-            const colId = this.dataset.colId;
-            if (draggedLeadId) updateField(draggedLeadId, 'columnId', colId);
+            const targetColId = this.dataset.colId;
+
+            // Se for um LEAD sendo arrastado
+            if (draggedLeadId) {
+                updateField(draggedLeadId, 'columnId', targetColId);
+            } 
+            // Se for uma COLUNA sendo arrastada
+            else if (draggedColId && draggedColId !== targetColId) {
+                reorderColumns(draggedColId, targetColId);
+            }
         }
 
+        // ==========================================
+        // 5. EVENTOS GLOBAIS E FERRAMENTAS
+        // ==========================================
+        
         // Busca
         searchInput.addEventListener('input', (e) => { currentSearchTerm = e.target.value.toLowerCase().trim(); applySearchHighlight(); });
         function applySearchHighlight() {
@@ -425,11 +481,28 @@
             }
         };
 
+        // Formatação Automática do Telefone no Formulário Manual
+        const manualPhoneInput = document.getElementById('manualPhone');
+        manualPhoneInput.addEventListener('input', function(e) {
+            // Remove tudo o que não for número e aplica a máscara (XX) XXXXX-XXXX
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+
+        // Submissão do Formulário Manual
         document.getElementById('manualForm').onsubmit = (e) => {
             e.preventDefault();
-            const input = document.getElementById('manualName');
-            db.collection('leads').add({ name: input.value, columnId: columnsData[0].id, createdAt: Date.now(), history: [] });
-            input.value = '';
+            const nameInput = document.getElementById('manualName');
+            db.collection('leads').add({ 
+                name: nameInput.value, 
+                phone: manualPhoneInput.value, 
+                address: '',
+                columnId: columnsData[0].id, 
+                createdAt: Date.now(), 
+                history: [] 
+            });
+            nameInput.value = '';
+            manualPhoneInput.value = '';
         };
     </script>
 </body>
