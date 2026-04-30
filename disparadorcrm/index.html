@@ -3,36 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disparador WhatsApp PRO + CRM</title>
+    <title>Disparador WhatsApp - CRM Pet Shops</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; } /* Mesmo fundo do CRM */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
+<body class="flex flex-col h-screen overflow-hidden">
 
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-4xl overflow-hidden flex flex-col md:flex-row min-h-[650px]">
+    <div class="p-6 pb-2 shrink-0">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800">
+                <i class="fa-solid fa-paper-plane mr-2 text-blue-600"></i>Disparador WhatsApp 
+                <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">Integrado</span>
+            </h1>
+            
+            <a href="../" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm border border-slate-200">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Kanban
+            </a>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar flex flex-col lg:flex-row gap-6">
         
-        <div id="setupSection" class="w-full md:w-1/2 p-8 bg-white flex flex-col h-full border-r border-slate-100 relative">
-            <h1 class="text-2xl font-bold text-slate-800 mb-2"><i class="fa-brands fa-whatsapp text-[#25D366] mr-2"></i>Disparador PRO</h1>
-            <p class="text-sm text-slate-500 mb-6">Integração direta com o seu CRM Kanban.</p>
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 w-full lg:w-1/2 flex flex-col h-full min-h-[500px]">
+            <p class="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">Importe contatos do seu Kanban ou cole os números manualmente para iniciar os disparos.</p>
 
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
-                <label class="block text-[10px] font-bold text-blue-800 uppercase tracking-wide mb-2"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Importar do CRM</label>
+                <label class="block text-[10px] font-bold text-blue-800 uppercase tracking-wide mb-2"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Importar Coluna do CRM</label>
                 <div class="flex gap-2">
                     <select id="colunaSelect" class="flex-1 border border-blue-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700">
                         <option value="">A carregar colunas...</option>
                     </select>
-                    <button onclick="importarDoCRM()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap">
+                    <button onclick="importarDoCRM(event)" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap">
                         Puxar Leads
                     </button>
                 </div>
@@ -41,12 +54,12 @@
             <div class="flex-1 flex flex-col gap-4">
                 <div class="flex-1 flex flex-col">
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Lista de Números</label>
-                    <textarea id="listaNumeros" placeholder="Os números do CRM aparecerão aqui, ou cole manualmente...\nEx: (33) 99999-9999" class="w-full flex-1 min-h-[120px] border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-[#25D366] focus:border-[#25D366] outline-none text-sm custom-scrollbar resize-none"></textarea>
+                    <textarea id="listaNumeros" placeholder="Os números do CRM aparecerão aqui...\nEx: (33) 99999-9999" class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm custom-scrollbar resize-none"></textarea>
                 </div>
 
                 <div class="flex-1 flex flex-col">
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Mensagem Padrão</label>
-                    <textarea id="mensagemPadrao" placeholder="Olá! Vi o seu Pet Shop e gostaria de apresentar uma novidade..." class="w-full flex-1 min-h-[120px] border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-[#25D366] focus:border-[#25D366] outline-none text-sm custom-scrollbar resize-none"></textarea>
+                    <textarea id="mensagemPadrao" placeholder="Olá! Vi o seu Pet Shop e gostaria de apresentar uma novidade..." class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none text-sm custom-scrollbar resize-none"></textarea>
                 </div>
             </div>
 
@@ -55,27 +68,28 @@
             </button>
         </div>
 
-        <div id="actionSection" class="w-full md:w-1/2 p-8 bg-slate-50 flex flex-col h-full relative opacity-50 pointer-events-none transition-opacity duration-300">
+        <div id="actionSection" class="bg-slate-50 p-6 rounded-2xl shadow-inner border border-slate-200 w-full lg:w-1/2 flex flex-col h-full relative opacity-50 pointer-events-none transition-opacity duration-300 min-h-[500px]">
             
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-bold text-slate-800">Fila de Envio</h2>
-                <span id="contadorFila" class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">0 / 0</span>
+                <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-layer-group mr-2 text-slate-400"></i>Fila de Envio</h2>
+                <div class="flex items-center gap-3">
+                    <span id="contadorFila" class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">0 / 0</span>
+                    <button onclick="resetarTudo()" class="text-slate-400 hover:text-red-500 transition-colors bg-white w-8 h-8 rounded-full shadow-sm border border-slate-200 flex items-center justify-center" title="Limpar e Recomeçar">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
             </div>
 
-            <div id="listaVisual" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-6 bg-white border border-slate-200 rounded-xl p-2">
+            <div id="listaVisual" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-6 bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
-                    <i class="fa-solid fa-inbox text-3xl mb-2 opacity-50"></i>
+                    <i class="fa-solid fa-inbox text-3xl mb-2 opacity-30"></i>
                     <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
                 </div>
             </div>
 
-            <button id="btnDisparar" onclick="dispararProximo()" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+            <button id="btnDisparar" onclick="dispararProximo()" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200/50 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                 <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
                 <span id="textoBtnAuxiliar" class="text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
-            </button>
-
-            <button onclick="resetarTudo()" class="absolute top-8 right-8 text-slate-400 hover:text-red-500 transition-colors bg-white p-2 rounded-full shadow-sm border border-slate-100" title="Limpar e Recomeçar">
-                <i class="fa-solid fa-rotate-right"></i>
             </button>
         </div>
 
@@ -100,8 +114,6 @@
         // ==========================================
         // LÓGICA DE INTEGRAÇÃO COM O CRM
         // ==========================================
-        
-        // 1. Carregar as Colunas do Firebase para o Dropdown
         async function carregarColunasCRM() {
             try {
                 const snap = await db.collection('columns').orderBy('order').get();
@@ -122,11 +134,9 @@
                 document.getElementById('colunaSelect').innerHTML = '<option value="">Erro ao conectar ao CRM</option>';
             }
         }
-        // Iniciar carregamento assim que a página abre
         carregarColunasCRM();
 
-        // 2. Função do Botão "Puxar Leads"
-        async function importarDoCRM() {
+        async function importarDoCRM(event) {
             const select = document.getElementById('colunaSelect');
             const colId = select.value;
             const colNome = select.options[select.selectedIndex].text;
@@ -141,13 +151,11 @@
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
                 
-                // Buscar os leads apenas da coluna selecionada
                 const snap = await db.collection('leads').where('columnId', '==', colId).get();
                 
                 let extracao = [];
                 snap.forEach(doc => {
                     const lead = doc.data();
-                    // Só puxa se o lead tiver telefone
                     if (lead.phone && lead.phone.trim() !== '') {
                         extracao.push(`${lead.name} - ${lead.phone}`);
                     }
@@ -160,11 +168,9 @@
                     return;
                 }
 
-                // Joga os telefones na caixa de texto
                 const textArea = document.getElementById('listaNumeros');
                 textArea.value = extracao.join('\n');
                 
-                // Efeito visual de sucesso
                 textArea.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
                 setTimeout(() => textArea.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50'), 800);
 
@@ -175,7 +181,7 @@
         }
 
         // ==========================================
-        // LÓGICA DO DISPARADOR (Fila e WhatsApp)
+        // LÓGICA DO DISPARADOR
         // ==========================================
         let filaDeNumeros = [];
         let nomesAssociados = [];
@@ -202,7 +208,6 @@
                 if (apenasNumeros.length >= 10) {
                     if (!apenasNumeros.startsWith('55')) apenasNumeros = '55' + apenasNumeros;
                     
-                    // Tenta capturar o nome se vier do CRM (ex: "Pet Shop da Zazá - 3399999999")
                     let nome = "Contato";
                     if(linha.includes('-')) {
                         nome = linha.split('-')[0].trim();
@@ -311,7 +316,7 @@
                 painelAcao.classList.add('opacity-50', 'pointer-events-none');
                 listaVisual.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
-                        <i class="fa-solid fa-inbox text-3xl mb-2 opacity-50"></i>
+                        <i class="fa-solid fa-inbox text-3xl mb-2 opacity-30"></i>
                         <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
                     </div>
                 `;
@@ -320,7 +325,7 @@
                     <span class="flex items-center gap-2 text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
                     <span class="text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
                 `;
-                btnDisparar.className = "w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none";
+                btnDisparar.className = "w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200/50 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none";
                 btnDisparar.disabled = true;
             }
         }
