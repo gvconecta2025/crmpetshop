@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Pro Version</title>
+    <title>CRM Pet Shops - Pro V3.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -19,16 +19,26 @@
         .kanban-col { min-width: 320px; }
         .card-ghost { opacity: 0.5; background-color: #e2e8f0; }
         .history-item { border-left: 2px solid #e2e8f0; padding-left: 10px; margin-bottom: 10px; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* Efeito de Marca-Texto para Pesquisa */
+        .highlight-match { background-color: #fef08a !important; color: #854d0e !important; padding: 2px 4px; border-radius: 4px; transition: all 0.3s ease; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
     <div class="p-6 pb-2 shrink-0">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h1 class="text-2xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">v2.0 - Histórico Ativo</span></h1>
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">v3.0</span></h1>
+                
+                <div class="relative w-72">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Localizar Pet Shop..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition-all">
+                </div>
+            </div>
             
             <div class="flex flex-col md:flex-row gap-6">
                 <div id="pasteZone" class="flex-1 border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-text outline-none hover:border-blue-400 focus:border-blue-500 focus:bg-white" tabindex="0">
@@ -36,8 +46,8 @@
                         <div class="bg-white p-3 rounded-full shadow-sm mb-3">
                             <i class="fa-regular fa-image text-2xl text-slate-400"></i>
                         </div>
-                        <p class="text-slate-700 font-semibold text-lg">Área de Captura Rápida</p>
-                        <p class="text-slate-500 mt-1 text-center text-sm">Clique aqui e faça <kbd class="bg-slate-200 px-2 py-1 rounded font-mono text-xs">Ctrl + V</kbd></p>
+                        <p class="text-slate-700 font-semibold text-lg">Criação Rápida por Print</p>
+                        <p class="text-slate-500 mt-1 text-center text-sm">Cole aqui (<kbd class="bg-slate-200 px-1 py-0.5 rounded text-xs font-mono">Ctrl+V</kbd>) para criar um Novo Lead.</p>
                     </div>
                     
                     <div id="pasteProcessingState" class="hidden flex-col items-center">
@@ -49,7 +59,7 @@
                 <div class="w-full md:w-1/3 flex flex-col justify-center">
                     <form id="manualForm" class="flex gap-2">
                         <input type="text" id="manualName" placeholder="Nome do Pet Shop..." class="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
-                        <button type="submit" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition" title="Adicionar">
+                        <button type="submit" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition" title="Adicionar Manualmente">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </form>
@@ -58,13 +68,15 @@
         </div>
     </div>
 
-    <div class="flex-1 overflow-x-auto p-6 pt-2">
-        <div class="flex gap-6 h-full" id="kanbanBoard">
+    <div class="flex-1 overflow-x-auto p-6 pt-2 custom-scrollbar">
+        <div class="flex gap-6 h-full items-start" id="kanbanBoard">
             </div>
     </div>
 
     <script>
-        // 1. CONFIGURAÇÃO FIREBASE (SUAS CHAVES)
+        // ==========================================
+        // 1. CONFIGURAÇÃO FIREBASE
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -77,62 +89,128 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 2. ESTADO
-        const columns = [
-            { id: 'col-1', title: 'Novos Leads' },
-            { id: 'col-2', title: 'Em Contato' },
-            { id: 'col-3', title: 'Apresentação' },
-            { id: 'col-4', title: 'Fechado' }
-        ];
-        
+        // ==========================================
+        // 2. VARIÁVEIS DE ESTADO
+        // ==========================================
+        let columnsData = [];
         let leadsData = [];
         let draggedLeadId = null;
-        let expandedLeads = new Set(); // Guarda quais cards estão abertos
+        let expandedLeads = new Set();
+        let currentSearchTerm = "";
 
         const boardEl = document.getElementById('kanbanBoard');
         const pasteZone = document.getElementById('pasteZone');
-        const pasteInitial = document.getElementById('pasteInitialState');
-        const pasteProcessing = document.getElementById('pasteProcessingState');
-        const manualForm = document.getElementById('manualForm');
+        const searchInput = document.getElementById('searchInput');
 
-        // 3. LISTENERS
+        // ==========================================
+        // 3. INICIALIZAÇÃO DAS COLUNAS (Persistentes)
+        // ==========================================
+        async function initColumns() {
+            const snap = await db.collection('columns').get();
+            if (snap.empty) {
+                // Se for a primeira vez, criar as colunas padrão
+                const defaults = [
+                    { id: 'col-1', title: 'Novos Leads', order: 1 },
+                    { id: 'col-2', title: 'Em Contato', order: 2 },
+                    { id: 'col-3', title: 'Apresentação', order: 3 },
+                    { id: 'col-4', title: 'Fechado', order: 4 }
+                ];
+                for (let col of defaults) {
+                    await db.collection('columns').doc(col.id).set(col);
+                }
+            }
+        }
+        initColumns();
+
+        // Escutar alterações nas colunas
+        db.collection('columns').orderBy('order').onSnapshot(snap => {
+            columnsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderBoard();
+        });
+
+        // Escutar alterações nos leads
         db.collection('leads').onSnapshot((snapshot) => {
             leadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             leadsData.sort((a, b) => b.createdAt - a.createdAt);
             renderBoard();
         });
 
+        // ==========================================
+        // 4. RENDERIZAÇÃO
+        // ==========================================
         function renderBoard() {
+            if(columnsData.length === 0) return; // Aguarda colunas carregarem
             boardEl.innerHTML = '';
-            columns.forEach(col => {
+            
+            columnsData.forEach(col => {
                 const colEl = document.createElement('div');
-                colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-full overflow-hidden shrink-0';
+                colEl.className = 'kanban-col w-80 bg-slate-200/60 rounded-2xl p-4 flex flex-col border border-slate-200 h-[calc(100vh-220px)] shrink-0';
                 colEl.dataset.colId = col.id;
+                
                 colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.classList.add('bg-slate-300/40'); });
                 colEl.addEventListener('dragleave', () => colEl.classList.remove('bg-slate-300/40'));
                 colEl.addEventListener('drop', handleDrop);
 
                 const colLeads = leadsData.filter(l => l.columnId === col.id);
+                
+                // 1. TÍTULO DA COLUNA EDITÁVEL
                 colEl.innerHTML = `
-                    <div class="flex justify-between items-center mb-4 px-1">
-                        <h2 class="font-bold text-slate-700">${col.title}</h2>
-                        <span class="bg-slate-300 text-slate-600 text-xs py-0.5 px-2 rounded-full font-medium">${colLeads.length}</span>
+                    <div class="flex justify-between items-center mb-4 px-1 group">
+                        <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" title="Clique para editar">
+                        <span class="bg-slate-300 text-slate-600 text-xs py-0.5 px-2 rounded-full font-medium ml-2">${colLeads.length}</span>
                     </div>
                 `;
 
                 const container = document.createElement('div');
                 container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-2 pr-1';
+                
                 colLeads.forEach(lead => container.appendChild(createCard(lead)));
+                if(colLeads.length === 0) {
+                    container.innerHTML = `<div class="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">Vazio</div>`;
+                }
                 
                 colEl.appendChild(container);
                 boardEl.appendChild(colEl);
             });
+
+            // 2. BOTÃO DE ADICIONAR NOVA COLUNA
+            const addColBtn = document.createElement('div');
+            addColBtn.className = 'shrink-0 mt-2';
+            addColBtn.innerHTML = `
+                <button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-14 flex items-center justify-center shadow-sm" title="Criar Nova Coluna">
+                    <i class="fa-solid fa-plus text-xl"></i>
+                </button>
+            `;
+            boardEl.appendChild(addColBtn);
+            
+            applySearchHighlight(); // Re-aplica destaque ao redesenhar
         }
 
+        // Criar Nova Coluna (Firebase)
+        window.addNewColumn = async () => {
+            const title = prompt("Qual o nome da nova coluna?");
+            if(title && title.trim()) {
+                const newId = 'col-' + Date.now();
+                await db.collection('columns').doc(newId).set({
+                    id: newId,
+                    title: title.trim(),
+                    order: columnsData.length + 1
+                });
+            }
+        };
+
+        // Atualizar Nome da Coluna (Firebase)
+        window.updateColumn = async (id, newTitle) => {
+            if(newTitle.trim()) await db.collection('columns').doc(id).update({ title: newTitle.trim() });
+        };
+
+        // ==========================================
+        // 5. CRIAÇÃO DO CARTÃO & OCR NO TELEFONE
+        // ==========================================
         function createCard(lead) {
             const isExpanded = expandedLeads.has(lead.id);
             const card = document.createElement('div');
-            card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group`;
+            card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative`;
             card.draggable = true;
             card.dataset.leadId = lead.id;
 
@@ -142,87 +220,129 @@
             });
             card.addEventListener('dragend', function() { this.classList.remove('card-ghost'); draggedLeadId = null; });
 
-            // Formatação de Datas
             const formatDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '-';
             const formatTime = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
 
             card.innerHTML = `
                 <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center gap-2 w-[70%]">
+                    <div class="flex items-center gap-2 w-[80%]">
                         <i class="fa-solid fa-grip-vertical text-slate-300"></i>
                         <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded edit-name" value="${lead.name}">
                     </div>
                     <div class="flex gap-2">
-                        <button class="text-slate-400 hover:text-blue-600 transition toggle-expand" title="Ver Histórico">
-                            <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-clock-rotate-left'}"></i>
+                        <button class="text-slate-400 hover:text-blue-600 transition toggle-expand bg-slate-50 rounded-full w-7 h-7 flex items-center justify-center" title="Ver Histórico">
+                            <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-list'}"></i>
                         </button>
-                        <button class="text-slate-300 hover:text-red-500 delete-btn"><i class="fa-regular fa-trash-can"></i></button>
                     </div>
                 </div>
 
                 <div class="space-y-2 mb-3">
-                    <div class="flex items-center text-sm text-slate-600"><i class="fa-solid fa-phone w-5 text-slate-400"></i>
-                        <input type="text" class="bg-transparent w-full focus:outline-none edit-phone" value="${lead.phone || ''}" placeholder="Telefone">
+                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 transition-colors" title="Dica: Pode colar um Print aqui (Ctrl+V) para extrair o número">
+                        <i class="fa-solid fa-phone text-xs text-slate-400 mr-2 phone-icon"></i>
+                        <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm text-slate-600" value="${lead.phone || ''}" placeholder="Cole o Print ou digite...">
                     </div>
-                    <div class="flex items-center text-xs text-slate-500"><i class="fa-solid fa-location-dot w-5 text-slate-400"></i>
-                        <input type="text" class="bg-transparent w-full focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço">
+                    <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 transition-colors">
+                        <i class="fa-solid fa-location-dot text-xs text-slate-400 mr-2"></i>
+                        <input type="text" class="w-full text-xs text-slate-500 bg-transparent focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço...">
                     </div>
                 </div>
 
                 <div class="${isExpanded ? 'block' : 'hidden'} mt-4 pt-4 border-t border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">Histórico de Observações</p>
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Histórico</p>
+                        
+                        <button class="text-red-400 hover:text-red-600 hover:bg-red-50 text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors delete-btn flex items-center gap-1">
+                            <i class="fa-regular fa-trash-can"></i> Excluir Lead
+                        </button>
+                    </div>
                     
                     <div class="max-h-40 overflow-y-auto custom-scrollbar mb-3 space-y-3">
                         ${(lead.history || []).length > 0 ? lead.history.map((h, index) => `
                             <div class="history-item text-xs">
-                                <textarea class="w-full bg-slate-50 border-none focus:ring-0 p-1 rounded edit-history-item" data-index="${index}">${h.text}</textarea>
-                                <div class="flex justify-between text-[9px] text-slate-400 mt-1 italic">
+                                <textarea class="w-full bg-slate-50 border border-slate-100 focus:border-blue-300 focus:ring-0 p-1.5 rounded outline-none edit-history-item resize-none min-h-[40px]" data-index="${index}">${h.text}</textarea>
+                                <div class="flex justify-between text-[9px] text-slate-400 mt-1 italic px-1">
                                     <span>Criado: ${formatDate(h.createdAt)} ${formatTime(h.createdAt)}</span>
                                     ${h.updatedAt ? `<span>Editado: ${formatDate(h.updatedAt)}</span>` : ''}
                                 </div>
                             </div>
-                        `).join('') : '<p class="text-xs text-slate-400 italic">Sem observações ainda.</p>'}
+                        `).join('') : '<p class="text-xs text-slate-400 italic">Nenhuma anotação.</p>'}
                     </div>
 
                     <div class="flex gap-2">
-                        <input type="text" class="flex-1 text-xs border border-slate-200 rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none new-note-input" placeholder="Nova nota...">
+                        <input type="text" class="flex-1 text-xs border border-slate-200 rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none new-note-input bg-amber-50/30" placeholder="Escrever nova nota...">
                         <button class="bg-slate-800 text-white px-3 py-1 rounded text-xs hover:bg-slate-900 add-note-btn"><i class="fa-solid fa-check"></i></button>
                     </div>
                 </div>
 
-                <button class="mt-3 w-full ${lead.phone ? 'bg-[#25D366]' : 'bg-slate-200 text-slate-400'} py-2 rounded-lg font-medium flex items-center justify-center gap-2 whatsapp-btn text-sm">
-                    <i class="fa-brands fa-whatsapp"></i> Conversar
+                <button class="mt-3 w-full ${lead.phone ? 'bg-[#25D366] hover:bg-[#1da851] text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-2 rounded-lg font-medium flex items-center justify-center gap-2 whatsapp-btn text-sm transition-colors">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Iniciar Conversa
                 </button>
             `;
 
-            // EVENTOS DO CARD
+            // Eventos Básicos
             card.querySelector('.toggle-expand').onclick = () => {
-                if (isExpanded) expandedLeads.delete(lead.id);
-                else expandedLeads.add(lead.id);
+                isExpanded ? expandedLeads.delete(lead.id) : expandedLeads.add(lead.id);
                 renderBoard();
             };
 
             card.querySelector('.edit-name').onblur = (e) => updateField(lead.id, 'name', e.target.value);
-            card.querySelector('.edit-phone').onblur = (e) => updateField(lead.id, 'phone', e.target.value);
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             
-            // Adicionar Nota ao Histórico
+            // 3. CAPTURAR PRINT DIRETAMENTE NO CAMPO DE TELEFONE
+            const phoneInput = card.querySelector('.edit-phone');
+            const phoneIcon = card.querySelector('.phone-icon');
+            
+            phoneInput.onblur = (e) => {
+                updateField(lead.id, 'phone', e.target.value);
+                const updatedLead = leadsData.find(l => l.id === lead.id);
+                if(updatedLead) updatedLead.phone = e.target.value; 
+                setTimeout(renderBoard, 100); // refresh pro botão do whatsapp atualizar
+            };
+
+            phoneInput.addEventListener('paste', async (e) => {
+                const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
+                if (item) {
+                    e.preventDefault(); // Evita colar coisas indesejadas
+                    const originalClass = phoneIcon.className;
+                    phoneIcon.className = "fa-solid fa-circle-notch fa-spin text-xs text-blue-500 mr-2"; // Spinner girando
+                    phoneInput.placeholder = "A ler imagem com IA...";
+                    phoneInput.value = "";
+                    
+                    try {
+                        const res = await Tesseract.recognize(item.getAsFile(), 'por');
+                        const text = res.data.text;
+                        // Expressão Regular Otimizada para telefones BR
+                        const phoneMatch = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/);
+                        
+                        if(phoneMatch) {
+                            const foundPhone = phoneMatch[0];
+                            phoneInput.value = foundPhone;
+                            await updateField(lead.id, 'phone', foundPhone);
+                        } else {
+                            alert("A IA não encontrou nenhum formato de telefone reconhecível neste print.");
+                        }
+                    } catch(err) {
+                        console.error("Erro Tesseract:", err);
+                    } finally {
+                        phoneIcon.className = originalClass; // Restaura ícone
+                        phoneInput.placeholder = "Cole o Print ou digite...";
+                        setTimeout(renderBoard, 100);
+                    }
+                }
+            });
+
+            // Notas
             const addNoteBtn = card.querySelector('.add-note-btn');
-            const newNoteInput = card.querySelector('.new-note-input');
             if(addNoteBtn) {
                 addNoteBtn.onclick = async () => {
-                    if(!newNoteInput.value.trim()) return;
+                    const val = card.querySelector('.new-note-input').value;
+                    if(!val.trim()) return;
                     const newHistory = lead.history || [];
-                    newHistory.push({
-                        text: newNoteInput.value,
-                        createdAt: Date.now(),
-                        updatedAt: null
-                    });
+                    newHistory.push({ text: val, createdAt: Date.now(), updatedAt: null });
                     await updateField(lead.id, 'history', newHistory);
                 };
             }
 
-            // Editar Nota Existente
             card.querySelectorAll('.edit-history-item').forEach(area => {
                 area.onblur = async (e) => {
                     const idx = e.target.dataset.index;
@@ -234,8 +354,14 @@
                 };
             });
 
-            card.querySelector('.delete-btn').onclick = () => confirm('Excluir lead?') && db.collection('leads').doc(lead.id).delete();
+            // 4. Excluir Seguro (Dentro do Histórico)
+            card.querySelector('.delete-btn').onclick = () => {
+                if(confirm('Tem a certeza absoluta que deseja EXCLUIR este Lead permanentemente?')) {
+                    db.collection('leads').doc(lead.id).delete();
+                }
+            };
             
+            // Botão WhatsApp Formatação
             card.querySelector('.whatsapp-btn').onclick = () => {
                 if(!lead.phone) return;
                 let num = lead.phone.replace(/\D/g, '');
@@ -246,7 +372,6 @@
             return card;
         }
 
-        // 4. FUNÇÕES FIREBASE
         async function updateField(id, field, val) { await db.collection('leads').doc(id).update({ [field]: val }); }
 
         function handleDrop(e) {
@@ -256,39 +381,67 @@
             if (draggedLeadId) updateField(draggedLeadId, 'columnId', colId);
         }
 
-        // 5. CAPTURA E OCR
-        manualForm.onsubmit = (e) => {
+        // ==========================================
+        // 6. BUSCA E DESTAQUE (MARCA-TEXTO)
+        // ==========================================
+        searchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value.toLowerCase().trim();
+            applySearchHighlight();
+        });
+
+        function applySearchHighlight() {
+            const inputs = document.querySelectorAll('.edit-name');
+            inputs.forEach(input => {
+                if (currentSearchTerm && input.value.toLowerCase().includes(currentSearchTerm)) {
+                    input.classList.add('highlight-match');
+                    input.classList.remove('text-slate-800', 'bg-transparent');
+                } else {
+                    input.classList.remove('highlight-match');
+                    input.classList.add('text-slate-800', 'bg-transparent');
+                }
+            });
+        }
+
+        // ==========================================
+        // 7. CRIAÇÃO GERAL POR PRINT (Área Tracejada)
+        // ==========================================
+        document.getElementById('manualForm').onsubmit = (e) => {
             e.preventDefault();
             const input = document.getElementById('manualName');
-            db.collection('leads').add({ name: input.value, columnId: 'col-1', createdAt: Date.now(), history: [] });
+            db.collection('leads').add({ name: input.value, columnId: columnsData[0].id, createdAt: Date.now(), history: [] });
             input.value = '';
         };
 
-        pasteZone.onpaste = async (e) => {
+        const pasteInitial = document.getElementById('pasteInitialState');
+        const pasteProcessing = document.getElementById('pasteProcessingState');
+        
+        document.getElementById('pasteZone').onpaste = async (e) => {
             const item = Array.from(e.clipboardData.items).find(i => i.type.includes('image'));
             if (item) {
                 pasteInitial.classList.add('hidden');
                 pasteProcessing.classList.remove('hidden');
+                pasteProcessing.classList.add('flex');
                 try {
                     const res = await Tesseract.recognize(item.getAsFile(), 'por');
                     const text = res.data.text;
                     const lines = text.split('\n').filter(l => l.trim().length > 2);
                     
                     let name = lines[0]?.toLowerCase().includes('pet') ? lines[1] : lines[0];
-                    let phone = text.match(/(?:\(\d{2}\)\s?)?\d{4,5}-\d{4}/)?.[0] || '';
+                    let phone = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/)?.[0] || '';
                     let addr = lines.find(l => l.match(/rua|av|praça|centro/i)) || '';
 
                     await db.collection('leads').add({
-                        name: name || 'Novo Lead',
+                        name: name || 'Novo Lead Extraído',
                         phone: phone,
                         address: addr,
-                        columnId: 'col-1',
+                        columnId: columnsData[0].id,
                         createdAt: Date.now(),
-                        history: [{ text: "Lead capturado via imagem.", createdAt: Date.now(), updatedAt: null }]
+                        history: [{ text: "Lead criado via inteligência artificial (Print).", createdAt: Date.now(), updatedAt: null }]
                     });
                 } finally {
                     pasteInitial.classList.remove('hidden');
                     pasteProcessing.classList.add('hidden');
+                    pasteProcessing.classList.remove('flex');
                 }
             }
         };
