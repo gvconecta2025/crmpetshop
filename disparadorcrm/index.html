@@ -25,7 +25,7 @@
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-slate-800">
                 <i class="fa-solid fa-paper-plane mr-2 text-blue-600"></i>Disparador WhatsApp 
-                <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">Integrado v3.1</span>
+                <span class="text-xs font-normal bg-blue-100 text-blue-600 px-2 py-1 rounded ml-2">Integrado v3.2</span>
             </h1>
             <a href="../" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm border border-slate-200">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Kanban
@@ -41,8 +41,8 @@
                 <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-2">
                     <i class="fa-solid fa-shield-halved mr-1"></i> Trava de Segurança: Quem está a enviar?
                 </label>
-                <input type="text" id="numeroRemetente" placeholder="Ex: (33) 99999-9999 (Número da Loja)" class="w-full border border-amber-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-700 font-bold" required>
-                <p class="text-[10px] text-amber-700 mt-1">Este campo não muda o seu WhatsApp, serve apenas como alerta visual para evitar disparos pela conta errada.</p>
+                <input type="text" id="numeroRemetente" value="(33) 99819-2213" placeholder="Ex: (33) 99999-9999" class="w-full border border-amber-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-700 font-bold" required>
+                <p class="text-[10px] text-amber-700 mt-1">O número oficial já está preenchido, mas pode editá-lo caso use um WhatsApp diferente hoje.</p>
             </div>
 
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
@@ -172,7 +172,7 @@
             const rawText = document.getElementById('listaNumeros').value;
             const rawMsg = document.getElementById('mensagemPadrao').value;
 
-            if (!remetente) { alert("SEGURANÇA: Por favor, preencha qual o SEU número (Remetente) antes de começar."); return; }
+            if (!remetente) { alert("SEGURANÇA: Por favor, confirme o seu número (Remetente) antes de começar."); return; }
             if (!rawText.trim()) { alert("Por favor, importe ou cole a lista de números."); return; }
 
             const linhas = rawText.split('\n');
