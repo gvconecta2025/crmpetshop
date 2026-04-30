@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.2</title>
+    <title>CRM Pet Shops - Kanban V5.3</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -32,7 +32,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.2</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.3</span>
                 </h1>
                 
                 <div class="flex items-center gap-4 w-full md:w-auto">
@@ -87,7 +87,7 @@
                     <form id="manualForm" class="flex flex-col gap-2">
                         <input type="text" id="manualName" placeholder="Nome da Loja..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs font-bold" required>
                         <div class="flex gap-2">
-                            <input type="text" id="manualPhone" placeholder="Celular..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
+                            <input type="text" id="manualPhone" placeholder="Celular (copie do Maps)..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
                             <button type="submit" class="bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-700 transition shadow-sm text-xs font-bold shrink-0">
                                 Criar
                             </button>
@@ -124,10 +124,9 @@
         let draggedColId = null; 
         let expandedLeads = new Set();
         
-        // Variáveis do Novo Motor de Pesquisa
         let currentSearchTerm = "";
-        let searchMatches = []; // Guarda os elementos HTML encontrados
-        let currentSearchIndex = -1; // Guarda qual é o match ativo atual
+        let searchMatches = []; 
+        let currentSearchIndex = -1; 
 
         const columnColors = [
             { bg: 'bg-blue-500', text: 'text-blue-600', dot: 'text-blue-500', lightBg: 'bg-blue-50' },
@@ -154,6 +153,21 @@
         });
 
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        
+        // MÁSCARA INTELIGENTE DE TELEFONE (Resolve o problema do Zero e +55)
+        function mascaraTelefoneInteligente(valorPuro) {
+            let val = valorPuro.replace(/\D/g, ''); // Tira letras e espaços
+            // Remove +55 se houver
+            if (val.startsWith('55') && val.length > 11) val = val.substring(2);
+            // Remove 0 no início (Erro do Google Maps)
+            if (val.startsWith('0')) val = val.substring(1);
+            
+            // Aplica máscara (XX) XXXXX-XXXX
+            let x = val.match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+            if (!x) return '';
+            return !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        }
+
         window.scrollToTop = (colId) => {
             const container = document.querySelector(`.kanban-scroll-container[data-col-id="${colId}"]`);
             if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
@@ -239,7 +253,6 @@
             addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full min-h-[100px] flex items-center justify-center shadow-sm"><i class="fa-solid fa-plus text-xl"></i></button>`;
             boardEl.appendChild(addColBtn);
             
-            // Re-aplica a pesquisa sempre que o quadro atualiza para manter os highlights
             applySearchHighlight(true);
         }
 
@@ -349,11 +362,12 @@
                 else alert('Por favor, preencha o endereço.');
             };
 
+            // Nova Lógica de Telefone (com Filtro Inteligente Google Maps)
             const phoneInput = card.querySelector('.edit-phone');
             const phoneIcon = card.querySelector('.phone-icon');
+            
             phoneInput.addEventListener('input', function(e) {
-                let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
-                e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+                e.target.value = mascaraTelefoneInteligente(e.target.value);
             });
             phoneInput.onblur = (e) => { updateField(lead.id, 'phone', e.target.value); };
             
@@ -366,12 +380,7 @@
                         const res = await Tesseract.recognize(item.getAsFile(), 'por');
                         const phoneMatch = res.data.text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/);
                         if(phoneMatch) {
-                            let cleanNum = phoneMatch[0].replace(/\D/g, '');
-                            let formatted = cleanNum;
-                            if(cleanNum.length >= 10) {
-                                let m = cleanNum.match(/(\d{2})(\d{4,5})(\d{4})/);
-                                if(m) formatted = `(${m[1]}) ${m[2]}-${m[3]}`;
-                            }
+                            let formatted = mascaraTelefoneInteligente(phoneMatch[0]);
                             phoneInput.value = formatted;
                             await updateField(lead.id, 'phone', formatted);
                         }
@@ -452,7 +461,7 @@
         }
 
         // ==========================================
-        // 5. MOTOR DE PESQUISA INTELIGENTE (NOVO)
+        // MOTOR DE PESQUISA INTELIGENTE
         // ==========================================
         searchInput.addEventListener('input', (e) => { 
             currentSearchTerm = e.target.value.toLowerCase().trim(); 
@@ -477,7 +486,6 @@
                 searchControls.classList.remove('hidden');
                 searchControls.classList.add('flex');
                 
-                // Se for a primeira vez que digita, foca no índice 0. Se for um re-render, mantém o foco.
                 if(!isReRender || currentSearchIndex === -1 || currentSearchIndex >= searchMatches.length) {
                     currentSearchIndex = 0;
                 }
@@ -497,8 +505,6 @@
 
         function focusSearchMatch(index) {
             if (searchMatches.length === 0) return;
-            
-            // Loop infinito (se chegar ao fim, volta ao primeiro e vice-versa)
             if (index < 0) index = searchMatches.length - 1;
             if (index >= searchMatches.length) index = 0;
             
@@ -509,8 +515,6 @@
             
             const activeEl = searchMatches[currentSearchIndex];
             activeEl.classList.add('active-search-match');
-            
-            // Scroll suave e centralizado para o cartão selecionado
             activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
@@ -520,11 +524,13 @@
         // ==========================================
         // EVENTOS GERAIS
         // ==========================================
+        
+        // Uso da Máscara Inteligente no Input Manual
         const manualPhoneInput = document.getElementById('manualPhone');
         manualPhoneInput.addEventListener('input', function(e) {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
-            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+            e.target.value = mascaraTelefoneInteligente(e.target.value);
         });
+
         document.getElementById('manualForm').onsubmit = (e) => {
             e.preventDefault();
             db.collection('leads').add({ name: document.getElementById('manualName').value, phone: manualPhoneInput.value, address: '', dealValue: 0, columnId: columnsData[0].id, createdAt: Date.now(), history: [] });
@@ -543,6 +549,8 @@
                     const lines = text.split('\n').filter(l => l.trim().length > 2);
                     let name = lines[0]?.toLowerCase().includes('pet') ? lines[1] : lines[0];
                     let phone = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/)?.[0] || '';
+                    if(phone) phone = mascaraTelefoneInteligente(phone); // Aplica máscara também no OCR
+                    
                     let addr = lines.find(l => l.match(/rua|av|praça|centro/i)) || '';
                     await db.collection('leads').add({ name: name || 'Novo Lead', phone: phone, address: addr, dealValue: 0, columnId: columnsData[0].id, createdAt: Date.now(), history: [{ text: "Criado via Print.", createdAt: Date.now() }] });
                 } finally { pasteInitial.classList.remove('hidden'); pasteProcessing.classList.add('hidden'); }
