@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM PetLojas - Ficha do Contato</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Oculta barra de rolagem mas mantém a funcionalidade */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800">
+
+    <nav class="w-20 bg-slate-900 flex flex-col items-center py-6 space-y-8 text-slate-400 border-r border-slate-800 shrink-0">
+        <div class="text-emerald-400 text-2xl font-bold mb-4">
+            <i class="fa-solid fa-paw"></i>
+        </div>
+        <a href="#" class="hover:text-white transition" title="Dashboard"><i class="fa-solid fa-chart-pie text-xl"></i></a>
+        <a href="#" class="text-white bg-slate-800 p-3 rounded-lg transition" title="Kanban"><i class="fa-solid fa-table-columns text-xl"></i></a>
+        <a href="#" class="hover:text-white transition" title="Agenda"><i class="fa-regular fa-calendar-check text-xl"></i></a>
+        <div class="flex-grow"></div>
+        <a href="#" class="hover:text-white transition" title="Configurações"><i class="fa-solid fa-gear text-xl"></i></a>
+        <img src="https://ui-avatars.com/api/?name=Vendedor&background=10b981&color=fff" class="w-10 h-10 rounded-full border-2 border-slate-700" alt="Avatar">
+    </nav>
+
+    <aside class="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto">
+        <div class="p-6 border-b border-gray-100">
+            <button class="text-gray-400 hover:text-gray-600 mb-4 text-sm font-medium transition">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Voltar ao Kanban
+            </button>
+            <div class="flex items-center justify-center w-20 h-20 bg-blue-100 text-blue-600 rounded-full text-2xl font-bold mb-4 mx-auto">
+                TR
+            </div>
+            <h2 class="text-xl font-bold text-center text-gray-900">Tolentino Rações</h2>
+            <p class="text-sm text-center text-gray-500 mb-4">Sr. Carlos Tolentino</p>
+            
+            <div class="flex justify-center gap-2 mb-6">
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">Em Negociação</span>
+                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Prospecção Fria</span>
+            </div>
+
+            <button class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 mb-6">
+                <i class="fa-brands fa-whatsapp text-xl"></i>
+                Chamar no WhatsApp
+            </button>
+
+            <div class="space-y-4 text-sm">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Telefone / WhatsApp</p>
+                    <p class="font-medium">(33) 3271-6614</p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Endereço</p>
+                    <p class="font-medium">Avenida Minas Gerais, 1523<br>Nossa Sra. das Graças, GV</p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase">Origem do Lead</p>
+                    <p class="font-medium">Extração Google Maps</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 bg-slate-50 flex flex-col relative">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-800">Histórico de Atividades</h3>
+            <span class="text-sm text-gray-500">3 interações</span>
+        </header>
+
+        <div class="flex-1 p-6 overflow-y-auto no-scrollbar space-y-6">
+            
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8">
+                <textarea class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none" rows="3" placeholder="Resuma a conversa ou adicione uma anotação sobre a Tolentino Rações..."></textarea>
+                <div class="flex justify-between items-center mt-3">
+                    <button class="text-gray-400 hover:text-blue-500 transition"><i class="fa-solid fa-paperclip"></i></button>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Salvar Nota</button>
+                </div>
+            </div>
+
+            <div class="relative border-l-2 border-gray-200 ml-4 space-y-8 pb-10">
+                
+                <div class="relative pl-6">
+                    <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50"></div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">Anotação</span>
+                            <span class="text-xs text-gray-400">Hoje, 15:00</span>
+                        </div>
+                        <p class="text-sm text-gray-700">Apresentei as 3 perguntas de ouro. Ele disse SIM para todas. Mandei o link de checkout e ficou de pagar o Pix até amanhã cedo.</p>
+                    </div>
+                </div>
+
+                <div class="relative pl-6">
+                    <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-gray-300 border-4 border-slate-50"></div>
+                    <div class="bg-transparent p-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-emerald-600"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</span>
+                            <span class="text-xs text-gray-400">Ontem, 14:30</span>
+                        </div>
+                        <p class="text-sm text-gray-600">Cliente disse que está ocupado dando banho num pet. Pediu para retornar amanhã às 09h.</p>
+                    </div>
+                </div>
+
+                <div class="relative pl-6">
+                    <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-gray-300 border-4 border-slate-50"></div>
+                    <div class="bg-transparent p-1">
+                        <p class="text-sm text-gray-500"><span class="font-semibold text-gray-700">Vendedor</span> moveu este card para <span class="font-semibold text-gray-700">Prospecção Fria</span>.</p>
+                        <span class="text-xs text-gray-400">01 Maio, 10:15</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="w-80 bg-white border-l border-gray-200 flex flex-col shrink-0">
+        <header class="p-6 border-b border-gray-100 bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <i class="fa-regular fa-calendar-check text-blue-600"></i> Próximos Passos
+            </h3>
+        </header>
+
+        <div class="p-6 flex-1 overflow-y-auto no-scrollbar">
+            <div class="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <h4 class="text-sm font-bold text-blue-800 mb-3">Agendar Tarefa</h4>
+                <input type="text" placeholder="Ex: Cobrar pagamento do Pix" class="w-full mb-3 text-sm p-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500">
+                <div class="flex gap-2 mb-3">
+                    <input type="date" class="w-full text-xs p-2 rounded border border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
+                    <input type="time" class="w-full text-xs p-2 rounded border border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
+                </div>
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 rounded transition">
+                    Criar Tarefa
+                </button>
+            </div>
+
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Tarefas Pendentes</h4>
+            
+            <div class="space-y-3">
+                <div class="p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition cursor-pointer bg-white group">
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition">Verificar compensação do Pix</p>
+                            <p class="text-xs text-red-500 font-medium mt-1"><i class="fa-regular fa-clock"></i> Amanhã, 09:00</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-3 border border-gray-200 rounded-lg bg-gray-50 opacity-60">
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" checked class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer" disabled>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 line-through">Ligar para apresentação</p>
+                            <p class="text-xs text-gray-400 mt-1">Concluída hoje</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+</body>
+</html>
