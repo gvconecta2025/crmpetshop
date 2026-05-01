@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM PetLojas - Ficha do Contato</title>
+    <title>CRM PetLojas - Diretório e Ficha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,99 +13,131 @@
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800">
 
-    <nav class="w-20 bg-slate-900 flex flex-col items-center py-6 space-y-8 text-slate-400 border-r border-slate-800 shrink-0">
+    <nav class="w-20 bg-slate-900 flex flex-col items-center py-6 space-y-8 text-slate-400 border-r border-slate-800 shrink-0 z-20">
         <div class="text-emerald-400 text-2xl font-bold mb-4"><i class="fa-solid fa-paw"></i></div>
         <a href="../index.html" class="hover:text-white transition" title="Voltar ao Kanban"><i class="fa-solid fa-table-columns text-xl"></i></a>
-        <a href="#" class="text-white bg-slate-800 p-3 rounded-lg transition" title="Ficha"><i class="fa-solid fa-address-card text-xl"></i></a>
+        <a href="index.html" class="text-white bg-slate-800 p-3 rounded-lg transition" title="Diretório de Contatos"><i class="fa-solid fa-address-card text-xl"></i></a>
         <a href="#" class="hover:text-white transition" title="Agenda"><i class="fa-regular fa-calendar-check text-xl"></i></a>
         <div class="flex-grow"></div>
         <a href="#" class="hover:text-white transition" title="Configurações"><i class="fa-solid fa-gear text-xl"></i></a>
         <img src="https://ui-avatars.com/api/?name=Vendedor&background=10b981&color=fff" class="w-10 h-10 rounded-full border-2 border-slate-700" alt="Avatar">
     </nav>
 
-    <aside class="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto">
-        <div class="p-6 border-b border-gray-100">
-            <button onclick="window.location.href='../index.html'" class="text-gray-400 hover:text-gray-600 mb-4 text-sm font-medium transition flex items-center">
-                <i class="fa-solid fa-arrow-left mr-2"></i> Voltar ao Kanban
-            </button>
-            
-            <div id="iniciais-cliente" class="flex items-center justify-center w-20 h-20 bg-blue-100 text-blue-600 rounded-full text-2xl font-bold mb-4 mx-auto uppercase">
-                ...
+    <div id="view-lista" class="hidden flex-1 flex-col bg-slate-50 overflow-hidden">
+        <header class="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Diretório de Contatos</h1>
+                <p class="text-sm text-gray-500 mt-1" id="contador-contatos">Carregando contatos...</p>
             </div>
-            <h2 id="nome-empresa" class="text-xl font-bold text-center text-gray-900">Carregando...</h2>
-            <p id="nome-contato" class="text-sm text-center text-gray-500 mb-4">Aguarde...</p>
-            
-            <div class="flex justify-center gap-2 mb-6">
-                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">Lead</span>
-            </div>
-
-            <button id="btn-whatsapp" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 mb-6 opacity-50 cursor-not-allowed" disabled>
-                <i class="fa-brands fa-whatsapp text-xl"></i>
-                Chamar no WhatsApp
-            </button>
-
-            <div class="space-y-4 text-sm">
-                <div>
-                    <p class="text-gray-400 text-xs font-semibold uppercase">Telefone / WhatsApp</p>
-                    <p id="telefone-cliente" class="font-medium text-gray-800">...</p>
-                </div>
-                <div>
-                    <p class="text-gray-400 text-xs font-semibold uppercase">Endereço</p>
-                    <p id="endereco-cliente" class="font-medium text-gray-800">...</p>
-                </div>
-                <div>
-                    <p class="text-gray-400 text-xs font-semibold uppercase">Origem do Lead</p>
-                    <p id="origem-cliente" class="font-medium text-gray-800">...</p>
+            <div class="flex gap-4">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="input-pesquisa" placeholder="Pesquisar nome ou telefone..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 text-sm">
                 </div>
             </div>
-        </div>
-    </aside>
-
-    <main class="flex-1 bg-slate-50 flex flex-col relative">
-        <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-gray-800">Histórico de Atividades</h3>
         </header>
+        
+        <main class="flex-1 p-8 overflow-y-auto no-scrollbar">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Empresa / Contato</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Telefone</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fase Atual (Kanban)</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-contatos" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
 
-        <div class="flex-1 p-6 overflow-y-auto no-scrollbar space-y-6">
-            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8">
-                <textarea id="texto-anotacao" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none" rows="3" placeholder="Resuma a conversa ou adicione uma anotação..."></textarea>
-                <div class="flex justify-between items-center mt-3">
-                    <button class="text-gray-400 hover:text-blue-500 transition"><i class="fa-solid fa-paperclip"></i></button>
-                    <button id="btn-salvar-nota" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Salvar Nota</button>
+    <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
+        
+        <aside class="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto">
+            <div class="p-6 border-b border-gray-100">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-gray-600 mb-4 text-sm font-medium transition flex items-center">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Voltar ao Diretório
+                </button>
+                
+                <div id="iniciais-cliente" class="flex items-center justify-center w-20 h-20 bg-blue-100 text-blue-600 rounded-full text-2xl font-bold mb-4 mx-auto uppercase">
+                    ...
+                </div>
+                <h2 id="nome-empresa" class="text-xl font-bold text-center text-gray-900">Carregando...</h2>
+                <p id="nome-contato" class="text-sm text-center text-gray-500 mb-4">Aguarde...</p>
+                
+                <div class="flex justify-center gap-2 mb-6">
+                    <span id="tag-coluna" class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">Lead</span>
+                </div>
+
+                <button id="btn-whatsapp" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 mb-6 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fa-brands fa-whatsapp text-xl"></i>
+                    Chamar no WhatsApp
+                </button>
+
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <p class="text-gray-400 text-xs font-semibold uppercase">Telefone / WhatsApp</p>
+                        <p id="telefone-cliente" class="font-medium text-gray-800">...</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs font-semibold uppercase">Endereço</p>
+                        <p id="endereco-cliente" class="font-medium text-gray-800">...</p>
+                    </div>
                 </div>
             </div>
+        </aside>
 
-            <div id="container-historico" class="relative border-l-2 border-gray-200 ml-4 space-y-8 pb-10">
-                <p class="text-sm text-gray-500 pl-6">Carregando histórico...</p>
-            </div>
-        </div>
-    </main>
+        <main class="flex-1 bg-slate-50 flex flex-col relative">
+            <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">Histórico de Atividades</h3>
+            </header>
 
-    <aside class="w-80 bg-white border-l border-gray-200 flex flex-col shrink-0">
-        <header class="p-6 border-b border-gray-100 bg-gray-50">
-            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <i class="fa-regular fa-calendar-check text-blue-600"></i> Próximos Passos
-            </h3>
-        </header>
-        <div class="p-6 flex-1 overflow-y-auto no-scrollbar">
-            <div class="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <h4 class="text-sm font-bold text-blue-800 mb-3">Agendar Tarefa</h4>
-                <input type="text" placeholder="Ex: Cobrar pagamento" class="w-full mb-3 text-sm p-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500">
-                <div class="flex gap-2 mb-3">
-                    <input type="date" class="w-full text-xs p-2 rounded border border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
-                    <input type="time" class="w-full text-xs p-2 rounded border border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
+            <div class="flex-1 p-6 overflow-y-auto no-scrollbar space-y-6">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8">
+                    <textarea id="texto-anotacao" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none" rows="3" placeholder="Resuma a conversa ou adicione uma anotação..."></textarea>
+                    <div class="flex justify-between items-center mt-3">
+                        <button class="text-gray-400 hover:text-blue-500 transition"><i class="fa-solid fa-paperclip"></i></button>
+                        <button id="btn-salvar-nota" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Salvar Nota</button>
+                    </div>
                 </div>
-                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 rounded transition">Criar Tarefa</button>
+
+                <div id="container-historico" class="relative border-l-2 border-gray-200 ml-4 space-y-8 pb-10">
+                    <p class="text-sm text-gray-500 pl-6">Carregando histórico...</p>
+                </div>
             </div>
-        </div>
-    </aside>
+        </main>
+
+        <aside class="w-80 bg-white border-l border-gray-200 flex flex-col shrink-0">
+            <header class="p-6 border-b border-gray-100 bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-regular fa-calendar-check text-blue-600"></i> Próximos Passos
+                </h3>
+            </header>
+            <div class="p-6 flex-1 overflow-y-auto no-scrollbar">
+                <div class="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                    <h4 class="text-sm font-bold text-blue-800 mb-3">Agendar Tarefa</h4>
+                    <input type="text" placeholder="Ex: Cobrar pagamento" class="w-full mb-3 text-sm p-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500">
+                    <div class="flex gap-2 mb-3">
+                        <input type="date" class="w-full text-xs p-2 rounded border border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
+                        <input type="time" class="w-full text-xs p-2 rounded border border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 rounded transition">Criar Tarefa</button>
+                </div>
+            </div>
+        </aside>
+
+    </div>
 
     <script type="module">
-        // 1. Importando o Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // Adicionamos collection e getDocs para podermos listar todos os contatos
+        import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🔴 SUAS CREDENCIAIS REAIS DO FIREBASE 🔴
+        // Suas chaves reais do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -115,75 +147,155 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
-        // Inicializando o App e o Banco de Dados
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        
+        let todosOsContatos = []; // Guardará a lista para o filtro de pesquisa funcionar rápido
 
-        // Função para pegar o ID da URL (?id=xxxx)
-        function getLeadIdFromUrl() {
+        // Gerenciador de Telas
+        function gerenciarExibicaoDaTela() {
             const parametros = new URLSearchParams(window.location.search);
-            return parametros.get('id');
+            const leadId = parametros.get('id');
+
+            if (leadId) {
+                // Se tem ID, esconde a lista e mostra a ficha
+                document.getElementById('view-lista').classList.add('hidden');
+                document.getElementById('view-detalhes').classList.remove('hidden');
+                carregarFichaDoLead(leadId);
+            } else {
+                // Se NÃO tem ID, mostra a lista e esconde a ficha
+                document.getElementById('view-lista').classList.remove('hidden');
+                document.getElementById('view-detalhes').classList.add('hidden');
+                carregarDiretorio();
+            }
         }
 
-        // Função para carregar os dados
-        async function carregarFichaDoLead() {
-            const leadId = getLeadIdFromUrl();
+        // ==========================================
+        // FUNÇÕES DO DIRETÓRIO (LISTA DE CONTATOS)
+        // ==========================================
+        async function carregarDiretorio() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "leads"));
+                todosOsContatos = [];
+                
+                querySnapshot.forEach((doc) => {
+                    todosOsContatos.push({ id: doc.id, ...doc.data() });
+                });
 
-            if (!leadId) {
-                alert("Nenhum cliente selecionado! Redirecionando para o funil...");
-                window.location.href = "../index.html"; 
+                document.getElementById('contador-contatos').innerText = `${todosOsContatos.length} contatos encontrados na base de dados.`;
+                renderizarTabela(todosOsContatos);
+                configurarPesquisa();
+
+            } catch (error) {
+                console.error("Erro ao carregar lista de contatos:", error);
+                document.getElementById('contador-contatos').innerText = "Erro ao carregar contatos.";
+            }
+        }
+
+        function renderizarTabela(lista) {
+            const tbody = document.getElementById('tabela-contatos');
+            tbody.innerHTML = '';
+
+            if(lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Nenhum contato encontrado.</td></tr>`;
                 return;
             }
 
+            lista.forEach(lead => {
+                const nomeFantasia = lead.titulo || lead.nomeEmpresa || "Nome não informado";
+                const iniciais = nomeFantasia.substring(0, 2).toUpperCase();
+                const telefone = lead.telefone || "Não informado";
+                const coluna = lead.columnId || "Lead Novo";
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm">
+                                ${iniciais}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${nomeFantasia}</div>
+                                <div class="text-sm text-gray-500">${lead.endereco || "Sem endereço"}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${telefone}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            ${coluna}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="?id=${lead.id}" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded-md font-bold transition">Abrir Ficha</a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function configurarPesquisa() {
+            const input = document.getElementById('input-pesquisa');
+            input.addEventListener('input', (e) => {
+                const termo = e.target.value.toLowerCase();
+                const contatosFiltrados = todosOsContatos.filter(lead => {
+                    const nome = (lead.titulo || lead.nomeEmpresa || "").toLowerCase();
+                    const tel = (lead.telefone || "").toLowerCase();
+                    return nome.includes(termo) || tel.includes(termo);
+                });
+                renderizarTabela(contatosFiltrados);
+            });
+        }
+
+        // ==========================================
+        // FUNÇÕES DA FICHA DE CADASTRO (DETALHES)
+        // ==========================================
+        async function carregarFichaDoLead(leadId) {
             try {
-                // Buscando o documento na coleção 'leads' (ou o nome que vc usa)
                 const docRef = doc(db, "leads", leadId); 
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const dados = docSnap.data();
-                    preencherTela(dados);
+                    preencherTelaFicha(dados);
                 } else {
                     alert("Ops! Cliente não encontrado no banco de dados.");
+                    window.location.href = "index.html"; // Volta para o diretório
                 }
             } catch (error) {
                 console.error("Erro ao buscar cliente:", error);
-                document.getElementById('nome-empresa').innerText = "Erro ao carregar";
             }
         }
 
-        // Função que joga os dados do Firebase para o HTML
-        function preencherTela(dados) {
-            const nomeFantasia = dados.nomeEmpresa || dados.titulo || "Nome não informado";
+        function preencherTelaFicha(dados) {
+            const nomeFantasia = dados.titulo || dados.nomeEmpresa || "Nome não informado";
             
-            // Textos principais
             document.getElementById("nome-empresa").innerText = nomeFantasia;
-            document.getElementById("nome-contato").innerText = dados.nomeContato || "Contato não informado";
+            document.getElementById("nome-contato").innerText = dados.nomeContato || "Contato principal";
             document.getElementById("telefone-cliente").innerText = dados.telefone || "Sem telefone";
-            document.getElementById("endereco-cliente").innerText = dados.endereco || "Governador Valadares - MG";
-            document.getElementById("origem-cliente").innerText = dados.origem || "Prospecção Ativa";
+            document.getElementById("endereco-cliente").innerText = dados.endereco || "Não informado";
+            document.getElementById("tag-coluna").innerText = dados.columnId || "Lead";
 
-            // Iniciais no círculo azul
             if(nomeFantasia !== "Nome não informado") {
                 document.getElementById("iniciais-cliente").innerText = nomeFantasia.substring(0, 2);
             }
 
-            // Ativar Botão do WhatsApp e configurar o link nativo
             const btnWhatsApp = document.getElementById("btn-whatsapp");
             const telefone = dados.telefone || "";
-            const numeroLimpo = telefone.replace(/\D/g, ''); // Tira traços e parênteses
+            const numeroLimpo = telefone.replace(/\D/g, ''); 
 
             if (numeroLimpo) {
                 btnWhatsApp.disabled = false;
                 btnWhatsApp.classList.remove('opacity-50', 'cursor-not-allowed');
-                
                 btnWhatsApp.onclick = () => {
                     const mensagem = encodeURIComponent(`Olá, dono da ${nomeFantasia}, vi que vocês têm um potencial enorme na região. Podemos conversar rapidamente?`);
                     window.open(`https://wa.me/55${numeroLimpo}?text=${mensagem}`, '_blank');
                 };
             }
 
-            // Remove o texto "Carregando histórico" (deixaremos vazio por enquanto até o módulo 2)
             document.getElementById("container-historico").innerHTML = `
                 <div class="relative pl-6">
                     <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-gray-300 border-4 border-slate-50"></div>
@@ -195,8 +307,8 @@
             `;
         }
 
-        // Inicia tudo ao carregar a tela
-        window.onload = carregarFichaDoLead;
+        // Inicia o processo quando a página carrega
+        window.onload = gerenciarExibicaoDaTela;
     </script>
 </body>
 </html>
