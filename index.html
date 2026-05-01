@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.8</title>
+    <title>CRM Pet Shops - Kanban V5.9</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -31,7 +31,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.8 (Stable)</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.9</span>
                 </h1>
                 
                 <div class="flex items-center gap-3 w-full md:w-auto">
@@ -45,7 +45,7 @@
 
                     <div class="relative flex-1 md:w-72 flex items-center bg-slate-50 border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all overflow-hidden h-10">
                         <i class="fa-solid fa-search text-slate-400 pl-3"></i>
-                        <input type="text" id="searchInput" placeholder="Localizar Pet Shop..." class="w-full pl-2 pr-2 py-2 bg-transparent focus:outline-none text-sm">
+                        <input type="text" id="searchInput" placeholder="Localizar Nome ou Telefone..." class="w-full pl-2 pr-2 py-2 bg-transparent focus:outline-none text-sm">
                         
                         <div id="searchControls" class="hidden items-center bg-slate-100 border-l border-slate-200 px-2 h-full">
                             <span id="searchCounter" class="text-xs font-bold text-slate-500 mr-1 min-w-[30px] text-center">0/0</span>
@@ -159,7 +159,6 @@
 
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         
-        // MÁSCARA INTELIGENTE (Resolve fixo e celular)
         function mascaraTelefoneInteligente(valorPuro) {
             if(!valorPuro) return '';
             let val = valorPuro.replace(/\D/g, ''); 
@@ -317,6 +316,7 @@
             const valueBgClass = isFechado ? 'bg-blue-50 border-blue-100 focus-within:border-blue-300' : 'bg-green-50 border-green-100 focus-within:border-green-300';
 
             const card = document.createElement('div');
+            // ADICIONADO data-lead-id na div principal para facilitar a busca
             card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative ${lead.isDuplicate ? 'ring-2 ring-red-300' : ''}`;
             card.draggable = true;
             card.dataset.leadId = lead.id;
@@ -414,7 +414,7 @@
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`http://googleusercontent.com/maps.google.com/7{encodeURIComponent(addr)}`, '_blank');
+                if(addr) window.open(`http://googleusercontent.com/maps.google.com/8{encodeURIComponent(addr)}`, '_blank');
                 else alert('Por favor, preencha o endereço.');
             };
 
@@ -514,7 +514,7 @@
         }
 
         // ==========================================
-        // MOTOR DE PESQUISA
+        // MOTOR DE PESQUISA INTELIGENTE (V5.9) - NOME E NÚMERO
         // ==========================================
         searchInput.addEventListener('input', (e) => { 
             currentSearchTerm = e.target.value.toLowerCase().trim(); 
@@ -524,17 +524,46 @@
         function applySearchHighlight(isReRender = false) { 
             searchMatches = [];
             
-            document.querySelectorAll('.edit-name').forEach(input => { 
+            // 1. Extrai apenas os números do termo pesquisado (para comparar com telefones)
+            const searchDigits = currentSearchTerm.replace(/\D/g, '');
+            
+            // 2. Limpa todas as marcações anteriores (Nomes e Telefones)
+            document.querySelectorAll('.edit-name, .edit-phone').forEach(input => { 
                 input.classList.remove('highlight-match', 'active-search-match'); 
-                input.classList.add('text-slate-800', 'bg-transparent'); 
-                
-                if (currentSearchTerm && input.value.toLowerCase().includes(currentSearchTerm)) { 
-                    input.classList.add('highlight-match'); 
-                    input.classList.remove('text-slate-800', 'bg-transparent'); 
-                    searchMatches.push(input);
-                } 
+                if(input.classList.contains('edit-name')) {
+                    input.classList.add('text-slate-800', 'bg-transparent'); 
+                }
             });
 
+            if (currentSearchTerm) { 
+                // 3. Procura em todos os cartões (pelo dataset leadId)
+                document.querySelectorAll('[data-lead-id]').forEach(card => {
+                    const nameInput = card.querySelector('.edit-name');
+                    const phoneInput = card.querySelector('.edit-phone');
+                    
+                    // Verifica Correspondência no Nome
+                    if (nameInput && nameInput.value.toLowerCase().includes(currentSearchTerm)) { 
+                        nameInput.classList.add('highlight-match'); 
+                        nameInput.classList.remove('text-slate-800', 'bg-transparent'); 
+                        searchMatches.push(nameInput);
+                    } 
+                    
+                    // Verifica Correspondência no Telefone (mesmo parcial e sem máscara)
+                    if (phoneInput && phoneInput.value) {
+                        const phoneDigits = phoneInput.value.replace(/\D/g, '');
+                        // Faz o match se o utilizador digitou a string exata com parênteses, OU se digitou apenas uma sequência de números que existe no telemóvel
+                        if (
+                            phoneInput.value.toLowerCase().includes(currentSearchTerm) || 
+                            (searchDigits.length > 0 && phoneDigits.includes(searchDigits))
+                        ) {
+                            phoneInput.classList.add('highlight-match'); 
+                            searchMatches.push(phoneInput);
+                        }
+                    }
+                });
+            }
+
+            // 4. Lógica do Navegador WhatsApp (Contador e Scroll)
             if (searchMatches.length > 0) {
                 searchControls.classList.remove('hidden');
                 searchControls.classList.add('flex');
