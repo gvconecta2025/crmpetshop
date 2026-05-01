@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CRM Pet Shops - Kanban V6.1 Financeiro</title>
+    <title>CRM Pet Shops - Kanban V6.2 Segurança</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -31,7 +31,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center w-full md:w-auto justify-between md:justify-start">
                     <span><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops</span>
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-chart-pie mr-1"></i> V6.1</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-lock mr-1"></i> V6.2</span>
                 </h1>
                 
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -74,7 +74,6 @@
 
                 <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 md:p-4 flex flex-col justify-between shadow-inner">
                     <div class="flex flex-row justify-between items-stretch mb-3 gap-4">
-                        
                         <div class="shrink-0 flex flex-col justify-between py-1">
                             <div>
                                 <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Qtd Total</p>
@@ -85,11 +84,9 @@
                                 <p class="text-sm md:text-lg font-black text-green-600 leading-none" id="dashTotalValue">R$ 0,00</p>
                             </div>
                         </div>
-
                         <div id="dashMetrics" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 items-end w-full justify-end">
                             </div>
                     </div>
-                    
                     <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex shrink-0" id="dashProgressBar">
                         </div>
                 </div>
@@ -201,13 +198,34 @@
         };
 
         // ==========================================
-        // DASHBOARD (ATUALIZADO COM FINANCEIRO)
+        // DELEÇÃO DE COLUNA (A Trava de Segurança V6.2)
+        // ==========================================
+        window.deleteColumn = async (colId) => {
+            // 1. Bloqueia imediatamente se tiver leads
+            const leadsInCol = leadsData.filter(l => l.columnId === colId);
+            if (leadsInCol.length > 0) {
+                alert(`⚠️ AÇÃO BLOQUEADA:\n\nEsta coluna ainda possui ${leadsInCol.length} cartão(ões).\nPara excluí-la, você precisa primeiro mover ou excluir todos os cartões que estão dentro dela.`);
+                return;
+            }
+
+            // 2. Confirmação se estiver vazia
+            if(confirm("Coluna vazia! Tem a certeza que deseja excluir esta coluna permanentemente?")) {
+                try {
+                    await db.collection('columns').doc(colId).delete();
+                } catch (error) {
+                    alert("Erro ao excluir a coluna.");
+                    console.error(error);
+                }
+            }
+        };
+
+        // ==========================================
+        // DASHBOARD
         // ==========================================
         function updateDashboard() {
             const totalLeads = leadsData.length;
             const totalValue = leadsData.reduce((acc, l) => acc + (parseFloat(l.dealValue) || 0), 0);
 
-            // Atualiza os globais
             document.getElementById('dashTotalLeads').innerText = totalLeads;
             document.getElementById('dashTotalValue').innerText = formatMoney(totalValue);
             
@@ -228,7 +246,6 @@
                 const isFechado = col.title.trim().toLowerCase() === 'fechado';
                 const valueColor = isFechado ? 'text-blue-500' : 'text-green-600';
 
-                // Mini-Card Atualizado com a linha do dinheiro
                 metricsContainer.innerHTML += `
                     <div class="flex flex-col bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-sm shrink-0 min-w-[85px] md:min-w-[110px]">
                         <div class="flex items-center gap-1.5 mb-1">
@@ -250,7 +267,7 @@
         }
 
         // ==========================================
-        // RENDERIZAÇÃO DO QUADRO (Ajustado para Mobile)
+        // RENDERIZAÇÃO DO QUADRO
         // ==========================================
         function renderBoard() {
             if(columnsData.length === 0) return;
@@ -291,7 +308,7 @@
             }
 
             boardEl.innerHTML = '';
-            updateDashboard(); // Chamada ao dashboard atualizado
+            updateDashboard(); 
             
             const isFitMode = columnsData.length <= 8;
             const columnWidthClass = isFitMode ? 'flex-1 min-w-[280px] md:min-w-[320px] max-w-[400px]' : 'w-[280px] md:w-80 shrink-0';
@@ -328,10 +345,16 @@
                         <div class="flex justify-between items-center mb-2 group cursor-grab">
                             <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs hidden md:block"></i>
                             <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate text-sm md:text-base" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()">
-                            <button onclick="scrollToTop('${col.id}')" class="text-slate-300 hover:text-blue-500 transition px-1 ml-auto" title="Subir ao topo">
+                            
+                            <button onclick="deleteColumn('${col.id}')" class="text-slate-300 hover:text-red-500 transition px-1 ml-auto" title="Excluir Coluna">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i>
+                            </button>
+
+                            <button onclick="scrollToTop('${col.id}')" class="text-slate-300 hover:text-blue-500 transition px-1 ml-1" title="Subir ao topo">
                                 <i class="fa-solid fa-arrow-up text-[10px]"></i>
                             </button>
-                            <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200 shrink-0">${colLeads.length}</span>
+                            
+                            <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-1 border border-slate-200 shrink-0">${colLeads.length}</span>
                         </div>
                         <div class="text-center bg-white/50 rounded-lg p-1.5 md:p-2 border border-white/60 shadow-sm mt-1">
                             <p class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-wider">${colSubtitle}</p>
@@ -357,7 +380,7 @@
 
             const addColBtn = document.createElement('div');
             addColBtn.className = 'shrink-0 h-full';
-            addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full flex items-center justify-center shadow-sm"><i class="fa-solid fa-plus text-xl"></i></button>`;
+            addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full flex items-center justify-center shadow-sm" title="Adicionar Coluna"><i class="fa-solid fa-plus text-xl"></i></button>`;
             boardEl.appendChild(addColBtn);
             
             applySearchHighlight(true);
@@ -634,7 +657,7 @@
         window.nextSearch = () => focusSearchMatch(currentSearchIndex + 1);
 
         // ==========================================
-        // EXTRAÇÃO INTELIGENTE DE PRINT (V5.8 STABLE)
+        // EXTRAÇÃO INTELIGENTE DE PRINT E FORM MANUAL
         // ==========================================
         const manualPhoneInput = document.getElementById('manualPhone');
         const manualAddressInput = document.getElementById('manualAddress');
