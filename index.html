@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.7</title>
+    <title>CRM Pet Shops - Kanban V5.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -31,7 +31,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center">
                     <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.7</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.8 (Stable)</span>
                 </h1>
                 
                 <div class="flex items-center gap-3 w-full md:w-auto">
@@ -159,6 +159,7 @@
 
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         
+        // MÁSCARA INTELIGENTE (Resolve fixo e celular)
         function mascaraTelefoneInteligente(valorPuro) {
             if(!valorPuro) return '';
             let val = valorPuro.replace(/\D/g, ''); 
@@ -202,6 +203,7 @@
                 scrollPositions[container.dataset.colId] = container.scrollTop;
             });
 
+            // CÁLCULO DE DUPLICATAS GLOBAL
             const phoneCounts = {};
             leadsData.forEach(lead => {
                 if(!lead.phone) return;
@@ -412,7 +414,7 @@
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`http://googleusercontent.com/maps.google.com/6{encodeURIComponent(addr)}`, '_blank');
+                if(addr) window.open(`http://googleusercontent.com/maps.google.com/7{encodeURIComponent(addr)}`, '_blank');
                 else alert('Por favor, preencha o endereço.');
             };
 
@@ -573,7 +575,7 @@
         window.nextSearch = () => focusSearchMatch(currentSearchIndex + 1);
 
         // ==========================================
-        // V5.7 CAÇADOR DE ENDEREÇOS & NOMES APRIMORADO
+        // EXTRAÇÃO INTELIGENTE DE PRINT (V5.8 STABLE)
         // ==========================================
         const manualPhoneInput = document.getElementById('manualPhone');
         const manualAddressInput = document.getElementById('manualAddress');
@@ -614,7 +616,7 @@
                     const text = res.data.text;
                     const lines = text.split('\n').map(l => l.trim());
 
-                    // --- CAÇADOR DE NOMES ---
+                    // --- CAÇADOR DE NOMES (V5.6 MANTIDO) ---
                     let name = 'Novo Lead';
                     const palavrasIgnoradas = ['pesquise', 'google', 'maps', 'rotas', 'salvar', 'compartilhar', 'avaliaç', 'telefone', 'endereço', 'fechado', 'aberto', 'adicionar'];
                     const palavrasChavePet = ['pet', 'shop', 'agro', 'vet', 'raç', 'rac', 'bicho', 'cão', 'cao', 'gato', 'clínica', 'clinica', 'pata', 'animal'];
@@ -636,7 +638,7 @@
                         }
                     }
 
-                    // --- CAÇADOR DE TELEFONES ---
+                    // --- CAÇADOR DE TELEFONES (MANTIDO) ---
                     let finalPhone = '';
                     const phoneRegex = /(?:\+55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[-\s]?\d{4}/g;
                     const allPhones = text.match(phoneRegex);
@@ -650,27 +652,12 @@
                         finalPhone = mascaraTelefoneInteligente(escolhido);
                     }
                     
-                    // --- NOVO CAÇADOR DE ENDEREÇOS (V5.7) ---
-                    let addr = '';
-                    for (let i = 0; i < lines.length; i++) {
-                        let linhaOriginal = lines[i];
-                        let l = linhaOriginal.toLowerCase();
-
-                        // Ignora lixo ou o nome já detetado
-                        if (l.includes('pesquise') || l.includes('rotas') || l.includes('salvar') || l.includes('aberto') || l.includes('fechado')) continue;
-                        if (linhaOriginal === name) continue;
-
-                        // Padrões Fortes do Google Maps Brasil
-                        if (
-                            l.match(/\b(rua|r\.|av|av\.|avenida|praça|rodovia|rod\.|tv\.|bairro|centro)\b/) || // Começa/tem R., Av.
-                            l.match(/,\s*\d+/) || // Tem vírgula seguida de número (Rua X, 123)
-                            l.match(/\d{5}-\d{3}/) || // Tem CEP formatado
-                            l.match(/-\s*(mg|sp|rj|es|ba|rs|pr|sc|go|mt|ms|df|pe|ce|ma|pb|rn|al|se|pi|to|pa|ap|rr|am|ac|ro)\b/) // Tem sigla de estado
-                        ) {
-                            addr = linhaOriginal;
-                            break;
-                        }
-                    }
+                    // --- CAÇADOR DE ENDEREÇOS (ROLLBACK PARA V5.6 STABLE) ---
+                    let addr = lines.find(l => 
+                        l.match(/(rua|av|avenida|praça|rodovia|bairro|centro)/i) || 
+                        l.match(/,\s*\d+/) || 
+                        l.match(/\d{5}-\d{3}/) 
+                    ) || '';
 
                     await db.collection('leads').add({ 
                         name: name, 
