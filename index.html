@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CRM Pet Shops - Kanban V6.4 Ajuste Auto</title>
+    <title>CRM Pet Shops - Kanban V6.6</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -31,13 +31,17 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center w-full md:w-auto justify-between md:justify-start">
                     <span><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops</span>
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-expand mr-1"></i> V6.4</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-bolt mr-1"></i> V6.6</span>
                 </h1>
                 
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                     <button id="btnFilterDuplicates" onclick="toggleDuplicates()" class="hidden w-full sm:w-auto bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-bold transition-all items-center justify-center gap-2 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-copy"></i> <span id="dupCountText">Duplicados (0)</span>
                     </button>
+
+                    <a href="https://crmpetshop.vercel.app/ficha-cadastro/index.html" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+                        <i class="fa-regular fa-address-book"></i> Ficha de Cliente
+                    </a>
 
                     <a href="https://crmpetshop.vercel.app/disparadorcrm/index.html" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-paper-plane"></i> Disparador
@@ -96,11 +100,11 @@
                     <form id="manualForm" class="flex flex-col gap-2">
                         <input type="text" id="manualName" placeholder="Nome da Loja..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs font-bold" required>
                         <div class="flex flex-col sm:flex-row gap-2">
-                            <input type="text" id="manualPhone" placeholder="Telefone..." class="w-full sm:w-1/3 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
-                            <input type="text" id="manualAddress" placeholder="Localização..." class="w-full sm:flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
+                            <input type="text" id="manualPhone" placeholder="Telefone/Celular..." class="w-full sm:w-1/3 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
+                            <input type="text" id="manualAddress" placeholder="Endereço ou Localização..." class="w-full sm:flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
                         </div>
-                        <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm text-xs font-bold w-full mt-1 flex items-center justify-center">
-                            <i class="fa-solid fa-plus mr-1"></i> Adicionar
+                        <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition shadow-sm text-xs font-bold w-full mt-1">
+                            <i class="fa-solid fa-plus mr-1"></i> Adicionar Lead
                         </button>
                     </form>
                 </div>
@@ -165,6 +169,7 @@
 
         const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         
+        // MÁSCARA INTELIGENTE (Resolve fixo e celular)
         function mascaraTelefoneInteligente(valorPuro) {
             if(!valorPuro) return '';
             let val = valorPuro.replace(/\D/g, ''); 
@@ -328,9 +333,6 @@
             boardEl.innerHTML = '';
             updateDashboard(); 
             
-            // CORREÇÃO MATEMÁTICA V6.4:
-            // Se <= 8, no Desktop ele reduz o min-w para 140px permitindo "espremer" todas na tela. No Mobile fica com 280px para rolar.
-            // Se > 8, ele trava em 280px / 320px para forçar rolagem lateral.
             const isFitMode = columnsData.length <= 8;
             const columnWidthClass = isFitMode 
                 ? 'w-[280px] shrink-0 lg:w-auto lg:flex-1 lg:min-w-[140px] max-w-[400px]' 
@@ -586,19 +588,9 @@
             if (draggedLeadId) updateField(draggedLeadId, 'columnId', targetColId);
             else if (draggedColId && draggedColId !== targetColId) reorderColumns(draggedColId, targetColId);
         }
-        async function reorderColumns(sourceId, targetId) {
-            const newCols = [...columnsData];
-            const srcIdx = newCols.findIndex(c => c.id === sourceId);
-            const tgtIdx = newCols.findIndex(c => c.id === targetId);
-            const [movedCol] = newCols.splice(srcIdx, 1);
-            newCols.splice(tgtIdx, 0, movedCol);
-            const batch = db.batch();
-            newCols.forEach((col, idx) => { batch.update(db.collection('columns').doc(col.id), { order: idx + 1 }); });
-            await batch.commit();
-        }
-
+        
         // ==========================================
-        // MOTOR DE PESQUISA INTELIGENTE (NOME E NÚMERO)
+        // MOTOR DE PESQUISA INTELIGENTE
         // ==========================================
         searchInput.addEventListener('input', (e) => { 
             currentSearchTerm = e.target.value.toLowerCase().trim(); 
