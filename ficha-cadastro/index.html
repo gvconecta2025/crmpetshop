@@ -9,7 +9,6 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Transição suave quando o campo for salvo */
         .salvo-sucesso { background-color: #d1fae5; transition: background-color 0.5s ease; }
     </style>
 </head>
@@ -57,8 +56,7 @@
     <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
         
         <aside class="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative">
-            
-            <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow-lg opacity-0 transition-opacity pointer-events-none">Salvo!</div>
+            <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow-lg opacity-0 transition-opacity pointer-events-none z-50">Salvo!</div>
 
             <div class="p-6 border-b border-gray-100">
                 <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-gray-600 mb-6 text-sm font-medium transition flex items-center">
@@ -131,7 +129,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // Importando onSnapshot para Tempo Real e updateDoc para Salvar
         import { getFirestore, doc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -143,195 +140,188 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        let todosOsLeads = [];
-        let unsubscribeLista = null;
-        let unsubscribeFicha = null;
-        let leadAtualId = null;
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            window.db = db; // Exportando para o escopo global apenas para debug
+            
+            let todosOsLeads = [];
+            let unsubscribeLista = null;
+            let unsubscribeFicha = null;
+            let leadAtualId = null;
 
-        async function init() {
-            const parametros = new URLSearchParams(window.location.search);
-            const leadId = parametros.get('id');
+            function init() {
+                const parametros = new URLSearchParams(window.location.search);
+                const leadId = parametros.get('id');
 
-            if (leadId) {
-                document.getElementById('view-lista').classList.add('hidden');
-                document.getElementById('view-detalhes').classList.remove('hidden');
-                carregarFichaEmTempoReal(leadId);
-            } else {
-                document.getElementById('view-lista').classList.remove('hidden');
-                document.getElementById('view-detalhes').classList.add('hidden');
-                carregarListaGeralEmTempoReal();
+                if (leadId) {
+                    document.getElementById('view-lista').classList.add('hidden');
+                    document.getElementById('view-detalhes').classList.remove('hidden');
+                    carregarFichaEmTempoReal(leadId);
+                } else {
+                    document.getElementById('view-lista').classList.remove('hidden');
+                    document.getElementById('view-detalhes').classList.add('hidden');
+                    carregarListaGeralEmTempoReal();
+                }
             }
-        }
 
-        // ==========================================
-        // FUNÇÕES DO DIRETÓRIO (TEMPO REAL)
-        // ==========================================
-        function carregarListaGeralEmTempoReal() {
-            // Se já tiver uma escuta ativa, desativa antes de criar outra
-            if(unsubscribeLista) unsubscribeLista();
-
-            unsubscribeLista = onSnapshot(collection(db, "leads"), (querySnapshot) => {
-                todosOsLeads = [];
-                querySnapshot.forEach(doc => { todosOsLeads.push({ id: doc.id, ...doc.data() }); });
-                
-                document.getElementById('contador-contatos').innerText = `${todosOsLeads.length} prospectos na base.`;
-                
-                // Reaplica a pesquisa se o usuário estiver digitando
-                const termo = document.getElementById('input-pesquisa').value.toLowerCase();
-                aplicarFiltro(termo);
-            });
-
-            document.getElementById('input-pesquisa').oninput = (e) => aplicarFiltro(e.target.value.toLowerCase());
-        }
-
-        function aplicarFiltro(termo) {
-            const filtrados = todosOsLeads.filter(l => 
-                (l.titulo || "").toLowerCase().includes(termo) || 
-                (l.telefone || "").includes(termo)
-            );
-            renderizarLista(filtrados);
-        }
-
-        function renderizarLista(lista) {
-            const tbody = document.getElementById('tabela-contatos');
-            tbody.innerHTML = '';
-            lista.forEach(lead => {
-                const nomeMostrado = lead.titulo || "Sem Nome"; 
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-gray-100";
-                tr.innerHTML = `
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">${nomeMostrado.substring(0,2)}</div>
-                            <span class="text-sm font-bold text-gray-900">${nomeMostrado}</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${lead.telefone || '-'}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase">
-                            ${lead.columnId || 'Sem Coluna'}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <a href="?id=${lead.id}" class="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-bold shadow-sm hover:bg-slate-50 transition">Ver Ficha</a>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // ==========================================
-        // FUNÇÕES DA FICHA E EDIÇÃO (TEMPO REAL)
-        // ==========================================
-        function carregarFichaEmTempoReal(id) {
-            leadAtualId = id;
-            if(unsubscribeFicha) unsubscribeFicha();
-
-            const docRef = doc(db, "leads", id);
-
-            unsubscribeFicha = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const d = docSnap.data();
-                    const nomeFinal = d.titulo || "Lead sem Nome";
+            // FUNÇÕES DO DIRETÓRIO (TEMPO REAL)
+            function carregarListaGeralEmTempoReal() {
+                if(unsubscribeLista) unsubscribeLista();
+                unsubscribeLista = onSnapshot(collection(db, "leads"), (querySnapshot) => {
+                    todosOsLeads = [];
+                    querySnapshot.forEach(doc => { todosOsLeads.push({ id: doc.id, ...doc.data() }); });
                     
-                    // IMPORTANTE: Só atualiza o texto se o vendedor NÃO estiver editando aquele campo.
-                    // Isso impede que o cursor pule ou que a digitação seja apagada pelo banco.
-                    if(document.activeElement.id !== "nome-empresa") {
-                        document.getElementById("nome-empresa").innerText = nomeFinal;
-                        document.getElementById("iniciais-cliente").innerText = nomeFinal.substring(0,2);
-                    }
-                    if(document.activeElement.id !== "nome-contato") {
-                        document.getElementById("nome-contato").innerText = d.nomeContato || "Adicionar contato";
-                    }
-                    if(document.activeElement.id !== "telefone-cliente") {
-                        document.getElementById("telefone-cliente").innerText = d.telefone || "Adicionar telefone";
-                        atualizarBotaoWhatsApp(d.telefone, nomeFinal);
-                    }
-                    if(document.activeElement.id !== "endereco-cliente") {
-                        document.getElementById("endereco-cliente").innerText = d.endereco || "Adicionar endereço";
-                    }
+                    document.getElementById('contador-contatos').innerText = `${todosOsLeads.length} prospectos na base.`;
+                    
+                    const termo = document.getElementById('input-pesquisa').value.toLowerCase();
+                    aplicarFiltro(termo);
+                }, (error) => {
+                    console.error("Erro no onSnapshot da Lista:", error);
+                });
 
-                    // A tag de fase atualiza sozinha se alguém mover no Kanban!
-                    document.getElementById("tag-coluna").innerText = d.columnId || "Lead";
-                }
-            });
-
-            // Ativa os listeners de edição para cada campo
-            ativarEdicao("nome-empresa", "titulo");
-            ativarEdicao("nome-contato", "nomeContato");
-            ativarEdicao("telefone-cliente", "telefone");
-            ativarEdicao("endereco-cliente", "endereco");
-
-            // Histórico visual básico
-            document.getElementById("container-historico").innerHTML = `
-                <div class="relative pl-6">
-                    <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50"></div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                        <p class="text-sm text-gray-700">Ficha carregada em Tempo Real.</p>
-                        <span class="text-[10px] text-gray-400 uppercase font-bold mt-2 block">SISTEMA PETLOJAS</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        function atualizarBotaoWhatsApp(telefone, nomeEmpresa) {
-            const btn = document.getElementById("btn-whatsapp");
-            const num = (telefone || "").replace(/\D/g, '');
-            if(num) {
-                btn.onclick = () => {
-                    const txt = encodeURIComponent(`Olá, pessoal da ${nomeEmpresa}! Aqui é da PetLojas. Tudo bem?`);
-                    window.open(`https://wa.me/55${num}?text=${txt}`, '_blank');
-                };
+                document.getElementById('input-pesquisa').oninput = (e) => aplicarFiltro(e.target.value.toLowerCase());
             }
-        }
 
-        function ativarEdicao(elementoId, campoFirebase) {
-            const el = document.getElementById(elementoId);
-            
-            // Remove listeners antigos recriando o nó
-            const newEl = el.cloneNode(true);
-            el.parentNode.replaceChild(newEl, el);
-            
-            // Salva quando o usuário clica fora (perde o foco)
-            newEl.addEventListener('blur', async (e) => {
-                const novoValor = e.target.innerText.trim();
-                
-                // Remove placeholders temporários
-                if(novoValor === "Adicionar contato" || novoValor === "Adicionar telefone" || novoValor === "Adicionar endereço") return;
+            function aplicarFiltro(termo) {
+                const filtrados = todosOsLeads.filter(l => 
+                    (l.titulo || "").toLowerCase().includes(termo) || 
+                    (l.telefone || "").includes(termo)
+                );
+                renderizarLista(filtrados);
+            }
 
-                if(leadAtualId) {
-                    try {
-                        const docRef = doc(db, "leads", leadAtualId);
-                        await updateDoc(docRef, { [campoFirebase]: novoValor });
-                        mostrarAvisoSalvo(newEl);
-                    } catch(err) {
-                        console.error("Erro ao salvar edição:", err);
+            function renderizarLista(lista) {
+                const tbody = document.getElementById('tabela-contatos');
+                tbody.innerHTML = '';
+                lista.forEach(lead => {
+                    const nomeMostrado = lead.titulo || "Sem Nome"; 
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition border-b border-gray-100";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">${nomeMostrado.substring(0,2)}</div>
+                                <span class="text-sm font-bold text-gray-900">${nomeMostrado}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${lead.telefone || '-'}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase">
+                                ${lead.columnId || 'Sem Coluna'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="?id=${lead.id}" class="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-bold shadow-sm hover:bg-slate-50 transition">Ver Ficha</a>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // FUNÇÕES DA FICHA E EDIÇÃO (TEMPO REAL)
+            function carregarFichaEmTempoReal(id) {
+                leadAtualId = id;
+                if(unsubscribeFicha) unsubscribeFicha();
+
+                const docRef = doc(db, "leads", id);
+
+                unsubscribeFicha = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const d = docSnap.data();
+                        const nomeFinal = d.titulo || "Lead sem Nome";
+                        
+                        if(document.activeElement.id !== "nome-empresa") {
+                            document.getElementById("nome-empresa").innerText = nomeFinal;
+                            document.getElementById("iniciais-cliente").innerText = nomeFinal.substring(0,2);
+                        }
+                        if(document.activeElement.id !== "nome-contato") {
+                            document.getElementById("nome-contato").innerText = d.nomeContato || "Adicionar contato";
+                        }
+                        if(document.activeElement.id !== "telefone-cliente") {
+                            document.getElementById("telefone-cliente").innerText = d.telefone || "Adicionar telefone";
+                            atualizarBotaoWhatsApp(d.telefone, nomeFinal);
+                        }
+                        if(document.activeElement.id !== "endereco-cliente") {
+                            document.getElementById("endereco-cliente").innerText = d.endereco || "Adicionar endereço";
+                        }
+
+                        document.getElementById("tag-coluna").innerText = d.columnId || "Lead";
                     }
+                }, (error) => {
+                    console.error("Erro no onSnapshot da Ficha:", error);
+                });
+
+                ativarEdicao("nome-empresa", "titulo");
+                ativarEdicao("nome-contato", "nomeContato");
+                ativarEdicao("telefone-cliente", "telefone");
+                ativarEdicao("endereco-cliente", "endereco");
+
+                document.getElementById("container-historico").innerHTML = `
+                    <div class="relative pl-6">
+                        <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50"></div>
+                        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                            <p class="text-sm text-gray-700">Ficha carregada em Tempo Real.</p>
+                            <span class="text-[10px] text-gray-400 uppercase font-bold mt-2 block">SISTEMA PETLOJAS</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function atualizarBotaoWhatsApp(telefone, nomeEmpresa) {
+                const btn = document.getElementById("btn-whatsapp");
+                const num = (telefone || "").replace(/\D/g, '');
+                if(num) {
+                    btn.onclick = () => {
+                        const txt = encodeURIComponent(`Olá, pessoal da ${nomeEmpresa}! Aqui é da PetLojas. Tudo bem?`);
+                        window.open(`https://wa.me/55${num}?text=${txt}`, '_blank');
+                    };
                 }
-            });
+            }
 
-            // Permite salvar apertando ENTER
-            newEl.addEventListener('keydown', (e) => {
-                if(e.key === 'Enter') {
-                    e.preventDefault(); // Evita quebrar a linha
-                    newEl.blur(); // Tira o foco, ativando o salvamento
-                }
-            });
+            function ativarEdicao(elementoId, campoFirebase) {
+                const el = document.getElementById(elementoId);
+                const newEl = el.cloneNode(true);
+                el.parentNode.replaceChild(newEl, el);
+                
+                newEl.addEventListener('blur', async (e) => {
+                    const novoValor = e.target.innerText.trim();
+                    if(novoValor === "Adicionar contato" || novoValor === "Adicionar telefone" || novoValor === "Adicionar endereço") return;
+
+                    if(leadAtualId) {
+                        try {
+                            const docRef = doc(db, "leads", leadAtualId);
+                            await updateDoc(docRef, { [campoFirebase]: novoValor });
+                            mostrarAvisoSalvo(newEl);
+                        } catch(err) {
+                            console.error("Erro ao salvar edição:", err);
+                        }
+                    }
+                });
+
+                newEl.addEventListener('keydown', (e) => {
+                    if(e.key === 'Enter') {
+                        e.preventDefault();
+                        newEl.blur();
+                    }
+                });
+            }
+
+            function mostrarAvisoSalvo(elemento) {
+                elemento.classList.add('salvo-sucesso');
+                setTimeout(() => elemento.classList.remove('salvo-sucesso'), 600);
+                
+                const aviso = document.getElementById('aviso-salvo');
+                aviso.classList.remove('opacity-0');
+                setTimeout(() => aviso.classList.add('opacity-0'), 1500);
+            }
+
+            // Inicia o app
+            window.onload = init;
+
+        } catch (fatalError) {
+            console.error("Erro fatal ao inicializar o script:", fatalError);
         }
-
-        function mostrarAvisoSalvo(elemento) {
-            elemento.classList.add('salvo-sucesso');
-            setTimeout(() => elemento.classList.remove('salvo-sucesso'), 600);
-            
-            const aviso = document.getElementById('aviso-salvo');
-            aviso.classList.remove('opacity-0');
-            setTimeout(() => aviso.classList.add('opacity-0'), 1500);
-        }
-
-        window.onload = init;
     </script>
 </body>
 </html>
