@@ -2,8 +2,8 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Pet Shops - Kanban V5.9</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CRM Pet Shops - Kanban V6.0 Mobile</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -26,28 +26,28 @@
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <div class="p-6 pb-2 shrink-0">
+    <div class="p-3 md:p-6 pb-0 md:pb-2 shrink-0 overflow-y-auto md:overflow-visible max-h-[50vh] md:max-h-none custom-scrollbar">
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <h1 class="text-2xl font-bold text-slate-800 flex items-center">
-                    <i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops
-                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Versão 5.9</span>
+                <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center w-full md:w-auto justify-between md:justify-start">
+                    <span><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops</span>
+                    <span class="text-[10px] font-bold bg-slate-800 text-amber-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-mobile-screen mr-1"></i> V6.0</span>
                 </h1>
                 
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <button id="btnFilterDuplicates" onclick="toggleDuplicates()" class="hidden bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-bold transition-all items-center gap-2 shadow-sm whitespace-nowrap">
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <button id="btnFilterDuplicates" onclick="toggleDuplicates()" class="hidden w-full sm:w-auto bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-bold transition-all items-center justify-center gap-2 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-copy"></i> <span id="dupCountText">Duplicados (0)</span>
                     </button>
 
-                    <a href="disparador/" target="_blank" rel="noopener noreferrer" class="bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-sm whitespace-nowrap">
+                    <a href="https://crmpetshop.vercel.app/disparadorcrm/index.html" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-paper-plane"></i> Disparador
                     </a>
 
-                    <div class="relative flex-1 md:w-72 flex items-center bg-slate-50 border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all overflow-hidden h-10">
+                    <div class="relative w-full md:w-72 flex items-center bg-slate-50 border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all overflow-hidden h-10">
                         <i class="fa-solid fa-search text-slate-400 pl-3"></i>
-                        <input type="text" id="searchInput" placeholder="Localizar Nome ou Telefone..." class="w-full pl-2 pr-2 py-2 bg-transparent focus:outline-none text-sm">
+                        <input type="text" id="searchInput" placeholder="Nome ou Telefone..." class="w-full pl-2 pr-2 py-2 bg-transparent focus:outline-none text-sm">
                         
-                        <div id="searchControls" class="hidden items-center bg-slate-100 border-l border-slate-200 px-2 h-full">
+                        <div id="searchControls" class="hidden items-center bg-slate-100 border-l border-slate-200 px-2 h-full shrink-0">
                             <span id="searchCounter" class="text-xs font-bold text-slate-500 mr-1 min-w-[30px] text-center">0/0</span>
                             <div class="flex flex-col">
                                 <button onclick="prevSearch()" class="text-slate-400 hover:text-blue-600 transition leading-none py-0.5 px-1"><i class="fa-solid fa-caret-up text-[12px]"></i></button>
@@ -73,15 +73,15 @@
                 </div>
 
                 <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-inner">
-                    <div class="flex flex-col lg:flex-row justify-between lg:items-end mb-3 gap-4">
+                    <div class="flex flex-row justify-between items-end mb-3 gap-4">
                         <div class="shrink-0">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Volume Total</p>
-                            <p class="text-3xl font-black text-slate-800 leading-none" id="dashTotalLeads">0</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                            <p class="text-2xl md:text-3xl font-black text-slate-800 leading-none" id="dashTotalLeads">0</p>
                         </div>
-                        <div id="dashMetrics" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 items-end w-full lg:justify-end">
+                        <div id="dashMetrics" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 items-end w-full justify-end">
                             </div>
                     </div>
-                    <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex" id="dashProgressBar">
+                    <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex shrink-0" id="dashProgressBar">
                         </div>
                 </div>
 
@@ -89,12 +89,12 @@
                     <label class="text-[10px] font-bold text-slate-400 uppercase mb-2">Novo Lead Manual</label>
                     <form id="manualForm" class="flex flex-col gap-2">
                         <input type="text" id="manualName" placeholder="Nome da Loja..." class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs font-bold" required>
-                        <div class="flex gap-2">
-                            <input type="text" id="manualPhone" placeholder="Telefone/Celular..." class="w-1/3 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
-                            <input type="text" id="manualAddress" placeholder="Endereço ou Localização..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="text" id="manualPhone" placeholder="Telefone..." class="w-full sm:w-1/3 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
+                            <input type="text" id="manualAddress" placeholder="Localização..." class="w-full sm:flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs">
                         </div>
-                        <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition shadow-sm text-xs font-bold w-full mt-1">
-                            <i class="fa-solid fa-plus mr-1"></i> Adicionar Lead
+                        <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm text-xs font-bold w-full mt-1 flex items-center justify-center">
+                            <i class="fa-solid fa-plus mr-1"></i> Adicionar
                         </button>
                     </form>
                 </div>
@@ -102,8 +102,8 @@
         </div>
     </div>
 
-    <div class="flex-1 overflow-x-auto p-6 pt-2 custom-scrollbar">
-        <div class="flex gap-6 h-full items-start" id="kanbanBoard">
+    <div class="flex-1 overflow-x-auto overflow-y-hidden p-3 md:p-6 pt-2 md:pt-4 custom-scrollbar flex flex-col">
+        <div class="flex gap-4 md:gap-6 flex-1 items-start min-h-0" id="kanbanBoard">
             </div>
     </div>
 
@@ -192,7 +192,7 @@
         };
 
         // ==========================================
-        // RENDERIZAÇÃO DO QUADRO
+        // RENDERIZAÇÃO DO QUADRO (Ajustado para Mobile)
         // ==========================================
         function renderBoard() {
             if(columnsData.length === 0) return;
@@ -202,7 +202,6 @@
                 scrollPositions[container.dataset.colId] = container.scrollTop;
             });
 
-            // CÁLCULO DE DUPLICATAS GLOBAL
             const phoneCounts = {};
             leadsData.forEach(lead => {
                 if(!lead.phone) return;
@@ -237,11 +236,13 @@
             updateDashboard();
             
             const isFitMode = columnsData.length <= 8;
-            const columnWidthClass = isFitMode ? 'flex-1 min-w-[200px] max-w-[400px]' : 'w-80 shrink-0';
+            // No mobile, a coluna deve ter um width fixo razoável para permitir scroll lateral
+            const columnWidthClass = isFitMode ? 'flex-1 min-w-[280px] md:min-w-[320px] max-w-[400px]' : 'w-[280px] md:w-80 shrink-0';
 
             columnsData.forEach((col, index) => {
                 const colEl = document.createElement('div');
-                colEl.className = `kanban-col ${columnWidthClass} bg-slate-200/60 rounded-2xl flex flex-col border border-slate-200 h-[calc(100vh-270px)] transition-colors`;
+                // h-full max-h-full garante que a coluna respeite o container pai no mobile
+                colEl.className = `kanban-col ${columnWidthClass} bg-slate-200/60 rounded-2xl flex flex-col border border-slate-200 h-full max-h-full transition-colors`;
                 colEl.dataset.colId = col.id;
                 
                 colEl.draggable = true;
@@ -267,28 +268,29 @@
                 const colSubtitleColor = isFechado ? 'text-blue-500' : 'text-green-600';
 
                 colEl.innerHTML = `
-                    <div class="p-4 pb-2 border-b border-slate-200/50">
+                    <div class="p-3 md:p-4 pb-2 border-b border-slate-200/50 shrink-0">
                         <div class="flex justify-between items-center mb-2 group cursor-grab">
-                            <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs"></i>
-                            <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()">
+                            <i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs hidden md:block"></i>
+                            <input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-blue-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate text-sm md:text-base" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()">
                             <button onclick="scrollToTop('${col.id}')" class="text-slate-300 hover:text-blue-500 transition px-1 ml-auto" title="Subir ao topo">
                                 <i class="fa-solid fa-arrow-up text-[10px]"></i>
                             </button>
                             <span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-2 border border-slate-200 shrink-0">${colLeads.length}</span>
                         </div>
-                        <div class="text-center bg-white/50 rounded-lg p-2 border border-white/60 shadow-sm mt-2">
-                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${colSubtitle}</p>
-                            <p class="text-sm font-black ${colSubtitleColor}">${formatMoney(colTotalValue)}</p>
+                        <div class="text-center bg-white/50 rounded-lg p-1.5 md:p-2 border border-white/60 shadow-sm mt-1">
+                            <p class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-wider">${colSubtitle}</p>
+                            <p class="text-xs md:text-sm font-black ${colSubtitleColor}">${formatMoney(colTotalValue)}</p>
                         </div>
                     </div>
                 `;
 
                 const container = document.createElement('div');
-                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-3 kanban-scroll-container relative';
+                // min-h-0 é essencial para o scroll interno no flexbox
+                container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-2 md:p-3 kanban-scroll-container relative min-h-0';
                 container.dataset.colId = col.id;
                 
                 colLeads.forEach(lead => container.appendChild(createCard(lead, col.title)));
-                if(colLeads.length === 0) container.innerHTML = `<div class="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-sm">Vazio</div>`;
+                if(colLeads.length === 0) container.innerHTML = `<div class="h-16 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-xs">Vazio</div>`;
                 
                 colEl.appendChild(container);
                 boardEl.appendChild(colEl);
@@ -299,8 +301,8 @@
             });
 
             const addColBtn = document.createElement('div');
-            addColBtn.className = 'shrink-0';
-            addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full min-h-[100px] flex items-center justify-center shadow-sm"><i class="fa-solid fa-plus text-xl"></i></button>`;
+            addColBtn.className = 'shrink-0 h-full';
+            addColBtn.innerHTML = `<button onclick="addNewColumn()" class="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition rounded-xl w-14 h-full flex items-center justify-center shadow-sm"><i class="fa-solid fa-plus text-xl"></i></button>`;
             boardEl.appendChild(addColBtn);
             
             applySearchHighlight(true);
@@ -316,8 +318,7 @@
             const valueBgClass = isFechado ? 'bg-blue-50 border-blue-100 focus-within:border-blue-300' : 'bg-green-50 border-green-100 focus-within:border-green-300';
 
             const card = document.createElement('div');
-            // ADICIONADO data-lead-id na div principal para facilitar a busca
-            card.className = `bg-white rounded-xl p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative ${lead.isDuplicate ? 'ring-2 ring-red-300' : ''}`;
+            card.className = `bg-white rounded-xl p-3 md:p-4 shadow-sm border ${isExpanded ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative ${lead.isDuplicate ? 'ring-2 ring-red-300' : ''}`;
             card.draggable = true;
             card.dataset.leadId = lead.id;
 
@@ -339,60 +340,59 @@
                 : `<div class="hidden"></div>`;
 
             card.innerHTML = `
-                <div class="flex items-start justify-between mb-3">
+                <div class="flex items-start justify-between mb-2 md:mb-3">
                     <div class="flex items-center gap-2 w-[80%]">
-                        <i class="fa-solid fa-grip-vertical text-slate-300"></i>
-                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded edit-name truncate" value="${lead.name}">
+                        <i class="fa-solid fa-grip-vertical text-slate-300 hidden md:block"></i>
+                        <input type="text" class="font-bold text-slate-800 bg-transparent w-full focus:outline-none focus:bg-slate-50 px-1 rounded edit-name truncate text-sm md:text-base" value="${lead.name}">
                     </div>
-                    <button class="text-slate-400 hover:text-blue-600 transition toggle-expand bg-slate-50 rounded-full w-7 h-7 flex items-center justify-center shrink-0">
-                        <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-list'}"></i>
+                    <button class="text-slate-400 hover:text-blue-600 transition toggle-expand bg-slate-50 rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center shrink-0">
+                        <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-list'} text-xs"></i>
                     </button>
                 </div>
 
-                <div class="space-y-2 mb-3">
+                <div class="space-y-1.5 md:space-y-2 mb-2 md:mb-3">
                     <div>
                         ${duplicateBadge}
                         <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300 ${lead.isDuplicate ? 'border-red-200 bg-red-50/50' : ''}">
-                            <i class="fa-solid fa-phone text-xs ${lead.isDuplicate ? 'text-red-400' : 'text-slate-400'} mr-2 phone-icon"></i>
-                            <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-sm ${lead.isDuplicate ? 'text-red-700 font-bold' : 'text-slate-600'}" value="${lead.phone || ''}" placeholder="Celular/Fixo...">
+                            <i class="fa-solid fa-phone text-[10px] md:text-xs ${lead.isDuplicate ? 'text-red-400' : 'text-slate-400'} mr-2 phone-icon"></i>
+                            <input type="text" class="bg-transparent w-full focus:outline-none edit-phone text-xs md:text-sm ${lead.isDuplicate ? 'text-red-700 font-bold' : 'text-slate-600'}" value="${lead.phone || ''}" placeholder="Celular/Fixo...">
                         </div>
                     </div>
                     
                     <div class="flex items-center bg-slate-50 rounded px-2 py-1 border border-transparent focus-within:border-slate-300">
-                        <i class="fa-solid fa-location-dot text-xs text-slate-400 mr-2"></i>
-                        <input type="text" class="w-full text-xs text-slate-500 bg-transparent focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço...">
-                        <button class="text-slate-400 hover:text-blue-500 transition ml-1 px-1 map-btn" title="Abrir no Google Maps"><i class="fa-solid fa-map-location-dot"></i></button>
+                        <i class="fa-solid fa-location-dot text-[10px] md:text-xs text-slate-400 mr-2"></i>
+                        <input type="text" class="w-full text-[10px] md:text-xs text-slate-500 bg-transparent focus:outline-none edit-address" value="${lead.address || ''}" placeholder="Endereço...">
+                        <button class="text-slate-400 hover:text-blue-500 transition ml-1 px-1 map-btn" title="Abrir no Google Maps"><i class="fa-solid fa-map-location-dot text-[10px] md:text-xs"></i></button>
                     </div>
 
-                    <div class="flex items-center rounded px-2 py-1 border transition-colors ${valueBgClass}">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">Valor:</span>
-                        <input type="text" class="edit-deal-value bg-transparent w-full focus:outline-none text-sm font-black ${valueColorClass} text-right" value="${formatMoney(lead.dealValue)}" title="Edite o valor deste negócio">
+                    <div class="flex items-center rounded px-2 py-1.5 border transition-colors ${valueBgClass}">
+                        <span class="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase mr-2">Valor:</span>
+                        <input type="text" class="edit-deal-value bg-transparent w-full focus:outline-none text-xs md:text-sm font-black ${valueColorClass} text-right" value="${formatMoney(lead.dealValue)}" title="Edite o valor deste negócio">
                     </div>
                 </div>
 
-                <div class="${isExpanded ? 'block' : 'hidden'} mt-4 pt-4 border-t border-slate-100">
+                <div class="${isExpanded ? 'block' : 'hidden'} mt-3 pt-3 border-t border-slate-100">
                     <div class="flex justify-between items-center mb-2">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Histórico</p>
-                        <button class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold delete-btn"><i class="fa-regular fa-trash-can"></i> Excluir Cartão</button>
+                        <p class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Histórico</p>
+                        <button class="text-red-400 hover:text-red-600 text-[9px] md:text-[10px] uppercase font-bold delete-btn"><i class="fa-regular fa-trash-can"></i> Excluir</button>
                     </div>
-                    <div class="max-h-40 overflow-y-auto custom-scrollbar mb-3 space-y-3">
+                    <div class="max-h-32 overflow-y-auto custom-scrollbar mb-2 space-y-2">
                         ${(lead.history || []).length > 0 ? lead.history.map((h, idx) => `
-                            <div class="history-item text-xs">
-                                <textarea class="w-full bg-slate-50 border-none focus:ring-0 p-1 rounded edit-history-item resize-none min-h-[40px]" data-index="${idx}">${h.text}</textarea>
-                                <div class="flex justify-between text-[9px] text-slate-400 mt-1 italic px-1">
+                            <div class="history-item text-[10px] md:text-xs">
+                                <textarea class="w-full bg-slate-50 border-none focus:ring-0 p-1 rounded edit-history-item resize-none min-h-[30px]" data-index="${idx}">${h.text}</textarea>
+                                <div class="flex justify-between text-[8px] md:text-[9px] text-slate-400 mt-1 italic px-1">
                                     <span>${formatDate(h.createdAt)} ${formatTime(h.createdAt)}</span>
-                                    ${h.updatedAt ? `<span>Edit: ${formatDate(h.updatedAt)}</span>` : ''}
                                 </div>
                             </div>
-                        `).join('') : '<p class="text-xs text-slate-400 italic">Sem notas.</p>'}
+                        `).join('') : '<p class="text-[10px] md:text-xs text-slate-400 italic">Sem notas.</p>'}
                     </div>
                     <div class="flex gap-2">
-                        <input type="text" class="flex-1 text-xs border border-slate-200 rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none new-note-input" placeholder="Nova nota...">
+                        <input type="text" class="flex-1 text-[10px] md:text-xs border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-blue-500 outline-none new-note-input" placeholder="Nova nota...">
                         <button class="bg-slate-800 text-white px-3 py-1 rounded text-xs add-note-btn"><i class="fa-solid fa-check"></i></button>
                     </div>
                 </div>
 
-                <button class="mt-3 w-full ${lead.phone ? 'bg-[#25D366] hover:bg-[#1da851] text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-2 rounded-lg font-medium flex items-center justify-center gap-2 whatsapp-btn text-sm transition-colors">
+                <button class="mt-2 md:mt-3 w-full ${lead.phone ? 'bg-[#25D366] hover:bg-[#1da851] text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-2 rounded-lg font-medium flex items-center justify-center gap-2 whatsapp-btn text-xs md:text-sm transition-colors">
                     <i class="fa-brands fa-whatsapp"></i> Conversar
                 </button>
             `;
@@ -414,7 +414,7 @@
             card.querySelector('.edit-address').onblur = (e) => updateField(lead.id, 'address', e.target.value);
             card.querySelector('.map-btn').onclick = () => {
                 const addr = card.querySelector('.edit-address').value.trim();
-                if(addr) window.open(`http://googleusercontent.com/maps.google.com/8{encodeURIComponent(addr)}`, '_blank');
+                if(addr) window.open(`http://googleusercontent.com/maps.google.com/9{encodeURIComponent(addr)}`, '_blank');
                 else alert('Por favor, preencha o endereço.');
             };
 
@@ -437,7 +437,7 @@
                             phoneInput.value = formatted;
                             await updateField(lead.id, 'phone', formatted);
                         }
-                    } catch(err) {} finally { phoneIcon.className = "fa-solid fa-phone text-xs text-slate-400 mr-2"; }
+                    } catch(err) {} finally { phoneIcon.className = "fa-solid fa-phone text-[10px] md:text-xs text-slate-400 mr-2"; }
                 }
             });
 
@@ -508,13 +508,13 @@
                 const count = leadsData.filter(l => l.columnId === col.id).length;
                 const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0;
                 const colorTheme = columnColors[index % columnColors.length];
-                metricsContainer.innerHTML += `<div class="flex flex-col bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm shrink-0 min-w-[90px]"><div class="flex items-center gap-1.5 mb-1"><span class="w-2 h-2 rounded-full ${colorTheme.bg}"></span><span class="text-[9px] font-bold text-slate-500 uppercase truncate max-w-[80px]">${col.title}</span></div><div class="flex items-baseline justify-between gap-3"><span class="text-xl font-black text-slate-800 leading-none">${count}</span><span class="text-[9px] font-bold ${colorTheme.text} ${colorTheme.lightBg} px-1.5 py-0.5 rounded-md">${percentage}%</span></div></div>`;
+                metricsContainer.innerHTML += `<div class="flex flex-col bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-sm shrink-0 min-w-[70px] md:min-w-[90px]"><div class="flex items-center gap-1.5 mb-1"><span class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${colorTheme.bg}"></span><span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase truncate max-w-[60px] md:max-w-[80px]">${col.title}</span></div><div class="flex items-baseline justify-between gap-2"><span class="text-sm md:text-xl font-black text-slate-800 leading-none">${count}</span><span class="text-[7px] md:text-[9px] font-bold ${colorTheme.text} ${colorTheme.lightBg} px-1 rounded-sm">${percentage}%</span></div></div>`;
                 if (count > 0) progressContainer.innerHTML += `<div class="${colorTheme.bg} h-full transition-all duration-500" style="width: ${percentage}%"></div>`;
             });
         }
 
         // ==========================================
-        // MOTOR DE PESQUISA INTELIGENTE (V5.9) - NOME E NÚMERO
+        // MOTOR DE PESQUISA INTELIGENTE (NOME E NÚMERO)
         // ==========================================
         searchInput.addEventListener('input', (e) => { 
             currentSearchTerm = e.target.value.toLowerCase().trim(); 
@@ -523,11 +523,8 @@
 
         function applySearchHighlight(isReRender = false) { 
             searchMatches = [];
-            
-            // 1. Extrai apenas os números do termo pesquisado (para comparar com telefones)
             const searchDigits = currentSearchTerm.replace(/\D/g, '');
             
-            // 2. Limpa todas as marcações anteriores (Nomes e Telefones)
             document.querySelectorAll('.edit-name, .edit-phone').forEach(input => { 
                 input.classList.remove('highlight-match', 'active-search-match'); 
                 if(input.classList.contains('edit-name')) {
@@ -536,22 +533,18 @@
             });
 
             if (currentSearchTerm) { 
-                // 3. Procura em todos os cartões (pelo dataset leadId)
                 document.querySelectorAll('[data-lead-id]').forEach(card => {
                     const nameInput = card.querySelector('.edit-name');
                     const phoneInput = card.querySelector('.edit-phone');
                     
-                    // Verifica Correspondência no Nome
                     if (nameInput && nameInput.value.toLowerCase().includes(currentSearchTerm)) { 
                         nameInput.classList.add('highlight-match'); 
                         nameInput.classList.remove('text-slate-800', 'bg-transparent'); 
                         searchMatches.push(nameInput);
                     } 
                     
-                    // Verifica Correspondência no Telefone (mesmo parcial e sem máscara)
                     if (phoneInput && phoneInput.value) {
                         const phoneDigits = phoneInput.value.replace(/\D/g, '');
-                        // Faz o match se o utilizador digitou a string exata com parênteses, OU se digitou apenas uma sequência de números que existe no telemóvel
                         if (
                             phoneInput.value.toLowerCase().includes(currentSearchTerm) || 
                             (searchDigits.length > 0 && phoneDigits.includes(searchDigits))
@@ -563,7 +556,6 @@
                 });
             }
 
-            // 4. Lógica do Navegador WhatsApp (Contador e Scroll)
             if (searchMatches.length > 0) {
                 searchControls.classList.remove('hidden');
                 searchControls.classList.add('flex');
@@ -604,7 +596,7 @@
         window.nextSearch = () => focusSearchMatch(currentSearchIndex + 1);
 
         // ==========================================
-        // EXTRAÇÃO INTELIGENTE DE PRINT (V5.8 STABLE)
+        // EXTRAÇÃO INTELIGENTE DE PRINT E FORM MANUAL
         // ==========================================
         const manualPhoneInput = document.getElementById('manualPhone');
         const manualAddressInput = document.getElementById('manualAddress');
@@ -645,7 +637,6 @@
                     const text = res.data.text;
                     const lines = text.split('\n').map(l => l.trim());
 
-                    // --- CAÇADOR DE NOMES (V5.6 MANTIDO) ---
                     let name = 'Novo Lead';
                     const palavrasIgnoradas = ['pesquise', 'google', 'maps', 'rotas', 'salvar', 'compartilhar', 'avaliaç', 'telefone', 'endereço', 'fechado', 'aberto', 'adicionar'];
                     const palavrasChavePet = ['pet', 'shop', 'agro', 'vet', 'raç', 'rac', 'bicho', 'cão', 'cao', 'gato', 'clínica', 'clinica', 'pata', 'animal'];
@@ -667,7 +658,6 @@
                         }
                     }
 
-                    // --- CAÇADOR DE TELEFONES (MANTIDO) ---
                     let finalPhone = '';
                     const phoneRegex = /(?:\+55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[-\s]?\d{4}/g;
                     const allPhones = text.match(phoneRegex);
@@ -681,7 +671,6 @@
                         finalPhone = mascaraTelefoneInteligente(escolhido);
                     }
                     
-                    // --- CAÇADOR DE ENDEREÇOS (ROLLBACK PARA V5.6 STABLE) ---
                     let addr = lines.find(l => 
                         l.match(/(rua|av|avenida|praça|rodovia|bairro|centro)/i) || 
                         l.match(/,\s*\d+/) || 
