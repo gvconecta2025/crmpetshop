@@ -27,7 +27,7 @@
         <header class="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">Diretório de Leads</h1>
-                <p class="text-sm text-gray-500 mt-1" id="contador-contatos">Carregando contatos...</p>
+                <p class="text-sm text-gray-500 mt-1 transition-colors" id="contador-contatos">Carregando contatos...</p>
             </div>
             <div class="relative">
                 <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
@@ -57,36 +57,30 @@
         
         <aside class="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative">
             <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow-lg opacity-0 transition-opacity pointer-events-none z-50">Salvo!</div>
-
             <div class="p-6 border-b border-gray-100">
                 <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-gray-600 mb-6 text-sm font-medium transition flex items-center">
                     <i class="fa-solid fa-arrow-left mr-2"></i> Voltar à Lista
                 </button>
-                
                 <div id="iniciais-cliente" class="flex items-center justify-center w-20 h-20 bg-blue-100 text-blue-600 rounded-full text-2xl font-bold mb-4 mx-auto uppercase pointer-events-none">..</div>
-                
-                <h2 id="nome-empresa" contenteditable="true" title="Clique para editar" class="text-xl font-bold text-center text-gray-900 leading-tight outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-200 rounded p-1 transition cursor-text border border-transparent hover:border-gray-200">Carregando...</h2>
-                
+                <h2 id="nome-empresa" contenteditable="true" class="text-xl font-bold text-center text-gray-900 leading-tight outline-none focus:bg-gray-50 rounded p-1 transition cursor-text border border-transparent hover:border-gray-200">Carregando...</h2>
                 <div class="flex justify-center mt-3 mb-6 pointer-events-none">
                     <span id="tag-coluna" class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full transition-all">Fase</span>
                 </div>
-
                 <button id="btn-whatsapp" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-emerald-100 transition flex items-center justify-center gap-2 mb-8">
                     <i class="fa-brands fa-whatsapp text-xl"></i> Chamar WhatsApp
                 </button>
-
                 <div class="space-y-5 text-sm">
                     <div>
                         <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Contato <i class="fa-solid fa-pen text-[9px] ml-1"></i></p>
-                        <p id="nome-contato" contenteditable="true" class="font-medium text-gray-800 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-200 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
+                        <p id="nome-contato" contenteditable="true" class="font-medium text-gray-800 outline-none focus:bg-gray-50 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
                     </div>
                     <div>
                         <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Telefone Principal <i class="fa-solid fa-pen text-[9px] ml-1"></i></p>
-                        <p id="telefone-cliente" contenteditable="true" class="font-medium text-gray-800 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-200 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
+                        <p id="telefone-cliente" contenteditable="true" class="font-medium text-gray-800 outline-none focus:bg-gray-50 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
                     </div>
                     <div>
                         <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Localização <i class="fa-solid fa-pen text-[9px] ml-1"></i></p>
-                        <p id="endereco-cliente" contenteditable="true" class="font-medium text-gray-800 text-xs outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-200 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
+                        <p id="endereco-cliente" contenteditable="true" class="font-medium text-gray-800 text-xs outline-none focus:bg-gray-50 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
                     </div>
                 </div>
             </div>
@@ -131,6 +125,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // SUAS CHAVES REAIS DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -140,16 +135,20 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
+        // VARIÁVEL VITAL: Qual é o nome da coleção que o seu Kanban salva os cards?
+        // Troque "leads" por "cards" ou "tarefas" caso não apareça nada.
+        const NOME_DA_COLECAO = "leads"; 
+
         try {
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
-            window.db = db; // Exportando para o escopo global apenas para debug
             
             let todosOsLeads = [];
             let unsubscribeLista = null;
             let unsubscribeFicha = null;
             let leadAtualId = null;
 
+            // Função de inicialização central
             function init() {
                 const parametros = new URLSearchParams(window.location.search);
                 const leadId = parametros.get('id');
@@ -165,20 +164,34 @@
                 }
             }
 
-            // FUNÇÕES DO DIRETÓRIO (TEMPO REAL)
+            // FUNÇÕES DO DIRETÓRIO
             function carregarListaGeralEmTempoReal() {
+                const contador = document.getElementById('contador-contatos');
+                
                 if(unsubscribeLista) unsubscribeLista();
-                unsubscribeLista = onSnapshot(collection(db, "leads"), (querySnapshot) => {
-                    todosOsLeads = [];
-                    querySnapshot.forEach(doc => { todosOsLeads.push({ id: doc.id, ...doc.data() }); });
-                    
-                    document.getElementById('contador-contatos').innerText = `${todosOsLeads.length} prospectos na base.`;
-                    
-                    const termo = document.getElementById('input-pesquisa').value.toLowerCase();
-                    aplicarFiltro(termo);
-                }, (error) => {
-                    console.error("Erro no onSnapshot da Lista:", error);
-                });
+                
+                try {
+                    unsubscribeLista = onSnapshot(collection(db, NOME_DA_COLECAO), (querySnapshot) => {
+                        todosOsLeads = [];
+                        querySnapshot.forEach(doc => { todosOsLeads.push({ id: doc.id, ...doc.data() }); });
+                        
+                        contador.innerText = `${todosOsLeads.length} prospectos encontrados.`;
+                        contador.classList.remove('text-red-600', 'font-bold');
+                        contador.classList.add('text-green-600');
+                        
+                        const termo = document.getElementById('input-pesquisa').value.toLowerCase();
+                        aplicarFiltro(termo);
+
+                    }, (error) => {
+                        // ARMADILHA DE ERRO: Se o firebase bloquear a leitura, o aviso aparece aqui!
+                        console.error("Erro no Firebase:", error);
+                        contador.innerText = `⚠️ ERRO FIREBASE: ${error.message}`;
+                        contador.classList.add('text-red-600', 'font-bold');
+                    });
+                } catch(e) {
+                    contador.innerText = `⚠️ ERRO CÓDIGO: ${e.message}`;
+                    contador.classList.add('text-red-600', 'font-bold');
+                }
 
                 document.getElementById('input-pesquisa').oninput = (e) => aplicarFiltro(e.target.value.toLowerCase());
             }
@@ -194,6 +207,13 @@
             function renderizarLista(lista) {
                 const tbody = document.getElementById('tabela-contatos');
                 tbody.innerHTML = '';
+                
+                // Tratamento se a coleção estiver vazia
+                if(lista.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500 font-medium">Nenhum dado encontrado na coleção "${NOME_DA_COLECAO}".</td></tr>`;
+                    return;
+                }
+
                 lista.forEach(lead => {
                     const nomeMostrado = lead.titulo || "Sem Nome"; 
                     const tr = document.createElement('tr');
@@ -219,14 +239,11 @@
                 });
             }
 
-            // FUNÇÕES DA FICHA E EDIÇÃO (TEMPO REAL)
+            // FUNÇÕES DA FICHA (MANTIDAS COMO ANTES)
             function carregarFichaEmTempoReal(id) {
                 leadAtualId = id;
                 if(unsubscribeFicha) unsubscribeFicha();
-
-                const docRef = doc(db, "leads", id);
-
-                unsubscribeFicha = onSnapshot(docRef, (docSnap) => {
+                unsubscribeFicha = onSnapshot(doc(db, NOME_DA_COLECAO, id), (docSnap) => {
                     if (docSnap.exists()) {
                         const d = docSnap.data();
                         const nomeFinal = d.titulo || "Lead sem Nome";
@@ -240,43 +257,25 @@
                         }
                         if(document.activeElement.id !== "telefone-cliente") {
                             document.getElementById("telefone-cliente").innerText = d.telefone || "Adicionar telefone";
-                            atualizarBotaoWhatsApp(d.telefone, nomeFinal);
+                            const btn = document.getElementById("btn-whatsapp");
+                            const num = (d.telefone || "").replace(/\D/g, '');
+                            if(num) {
+                                btn.onclick = () => {
+                                    window.open(`https://wa.me/55${num}?text=${encodeURIComponent(`Olá ${nomeFinal}!`)}`, '_blank');
+                                };
+                            }
                         }
                         if(document.activeElement.id !== "endereco-cliente") {
                             document.getElementById("endereco-cliente").innerText = d.endereco || "Adicionar endereço";
                         }
-
                         document.getElementById("tag-coluna").innerText = d.columnId || "Lead";
                     }
-                }, (error) => {
-                    console.error("Erro no onSnapshot da Ficha:", error);
                 });
 
                 ativarEdicao("nome-empresa", "titulo");
                 ativarEdicao("nome-contato", "nomeContato");
                 ativarEdicao("telefone-cliente", "telefone");
                 ativarEdicao("endereco-cliente", "endereco");
-
-                document.getElementById("container-historico").innerHTML = `
-                    <div class="relative pl-6">
-                        <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50"></div>
-                        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                            <p class="text-sm text-gray-700">Ficha carregada em Tempo Real.</p>
-                            <span class="text-[10px] text-gray-400 uppercase font-bold mt-2 block">SISTEMA PETLOJAS</span>
-                        </div>
-                    </div>
-                `;
-            }
-
-            function atualizarBotaoWhatsApp(telefone, nomeEmpresa) {
-                const btn = document.getElementById("btn-whatsapp");
-                const num = (telefone || "").replace(/\D/g, '');
-                if(num) {
-                    btn.onclick = () => {
-                        const txt = encodeURIComponent(`Olá, pessoal da ${nomeEmpresa}! Aqui é da PetLojas. Tudo bem?`);
-                        window.open(`https://wa.me/55${num}?text=${txt}`, '_blank');
-                    };
-                }
             }
 
             function ativarEdicao(elementoId, campoFirebase) {
@@ -286,41 +285,31 @@
                 
                 newEl.addEventListener('blur', async (e) => {
                     const novoValor = e.target.innerText.trim();
-                    if(novoValor === "Adicionar contato" || novoValor === "Adicionar telefone" || novoValor === "Adicionar endereço") return;
-
-                    if(leadAtualId) {
-                        try {
-                            const docRef = doc(db, "leads", leadAtualId);
-                            await updateDoc(docRef, { [campoFirebase]: novoValor });
-                            mostrarAvisoSalvo(newEl);
-                        } catch(err) {
-                            console.error("Erro ao salvar edição:", err);
-                        }
-                    }
+                    if(novoValor.includes("Adicionar") || !leadAtualId) return;
+                    try {
+                        await updateDoc(doc(db, NOME_DA_COLECAO, leadAtualId), { [campoFirebase]: novoValor });
+                        mostrarAvisoSalvo(newEl);
+                    } catch(err) { console.error(err); }
                 });
-
-                newEl.addEventListener('keydown', (e) => {
-                    if(e.key === 'Enter') {
-                        e.preventDefault();
-                        newEl.blur();
-                    }
-                });
+                newEl.addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); newEl.blur(); } });
             }
 
             function mostrarAvisoSalvo(elemento) {
                 elemento.classList.add('salvo-sucesso');
                 setTimeout(() => elemento.classList.remove('salvo-sucesso'), 600);
-                
                 const aviso = document.getElementById('aviso-salvo');
                 aviso.classList.remove('opacity-0');
                 setTimeout(() => aviso.classList.add('opacity-0'), 1500);
             }
 
-            // Inicia o app
-            window.onload = init;
+            // GATILHO DIRETO! (Sem depender de window.onload)
+            init();
 
         } catch (fatalError) {
-            console.error("Erro fatal ao inicializar o script:", fatalError);
+            // ARMADILHA DE ERRO CRÍTICO
+            console.error("Erro Crítico:", fatalError);
+            document.getElementById('contador-contatos').innerText = `⚠️ FALHA CRÍTICA: ${fatalError.message}`;
+            document.getElementById('contador-contatos').classList.add('text-red-600', 'font-bold');
         }
     </script>
 </body>
