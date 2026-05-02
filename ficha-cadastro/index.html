@@ -13,8 +13,32 @@
         .salvo-sucesso { background-color: #d1fae5 !important; transition: background-color 0.5s ease; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800">
+<body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800 relative">
 
+    <div id="modal-imagem" class="fixed inset-0 bg-slate-900/60 z-[100] hidden items-center justify-center backdrop-blur-sm transition-all">
+        <div class="bg-white rounded-2xl p-6 shadow-2xl w-[400px] flex flex-col items-center relative animate-[fade-in_0.2s_ease-out]">
+            <button id="btn-fechar-modal" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i class="fa-solid fa-xmark text-xl"></i></button>
+
+            <h3 class="text-lg font-black text-slate-800 mb-2 mt-2">Atualizar Imagem / Ler Dados</h3>
+            <p class="text-xs text-slate-500 text-center mb-6">Como você deseja atualizar as informações deste lead?</p>
+
+            <div class="w-full border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-xl p-6 flex flex-col items-center justify-center mb-5 transition hover:bg-blue-50">
+                <i class="fa-solid fa-clipboard text-3xl text-blue-500 mb-3"></i>
+                <p class="text-sm font-bold text-blue-900 mb-1">Pressione <kbd class="bg-white border border-slate-200 text-slate-700 rounded px-1.5 shadow-sm text-xs font-mono mx-1">Ctrl + V</kbd></p>
+                <p class="text-[10px] text-blue-600/80 text-center leading-tight mt-1">Cole um print do Google Maps aqui e a nossa<br>Inteligência Artificial (OCR) fará o cadastro.</p>
+            </div>
+
+            <div class="w-full flex items-center gap-3 mb-5">
+                <div class="flex-1 h-px bg-slate-200"></div>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">OU</span>
+                <div class="flex-1 h-px bg-slate-200"></div>
+            </div>
+
+            <button id="btn-procurar-foto" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm border border-slate-200">
+                <i class="fa-solid fa-folder-open text-slate-500"></i> Procurar imagem no PC
+            </button>
+        </div>
+    </div>
     <nav class="w-20 bg-slate-900 flex flex-col items-center py-6 space-y-8 text-slate-400 border-r border-slate-800 shrink-0 z-20">
         <div class="text-emerald-400 text-2xl font-bold mb-4"><i class="fa-solid fa-paw"></i></div>
         <a href="../index.html" class="hover:text-white transition" title="Voltar ao Kanban"><i class="fa-solid fa-table-columns text-xl"></i></a>
@@ -52,25 +76,24 @@
         <aside class="w-[450px] bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative p-6">
             <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 transition-opacity z-50 shadow-xl">Salvo!</div>
             
-            <button onclick="window.location.href='index.html'" class="text-slate-500 mb-6 text-sm font-bold flex items-center bg-slate-100 hover:bg-slate-200 transition px-3 py-1.5 rounded-lg w-fit">
+            <button onclick="window.location.href='index.html'" class="text-slate-500 hover:text-slate-800 mb-6 text-sm font-bold flex items-center bg-slate-100 hover:bg-slate-200 transition px-3 py-1.5 rounded-lg w-fit">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Voltar à Lista
             </button>
             
             <div class="flex gap-4 mb-4">
                 <div class="flex flex-col items-center">
                     <div class="relative group cursor-pointer shrink-0" id="area-photo">
-                        <img id="lead-photo" src="https://ui-avatars.com/api/?name=PS&background=e2e8f0" class="w-24 h-24 rounded-2xl border-4 border-slate-100 shadow-inner object-cover">
-                        <div class="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity space-y-1">
-                            <i class="fa-solid fa-camera text-xl"></i>
-                            <span class="text-[9px] font-bold uppercase text-center">Trocar Foto<br>(Clique)</span>
+                        <img id="lead-photo" src="https://ui-avatars.com/api/?name=PS&background=e2e8f0" class="w-24 h-24 rounded-2xl border-4 border-slate-100 shadow-inner object-cover transition group-hover:blur-[2px]">
+                        <div class="absolute inset-0 bg-black/40 rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity space-y-1">
+                            <i class="fa-solid fa-camera-rotate text-2xl"></i>
+                            <span class="text-[9px] font-bold uppercase text-center mt-1">Alterar /<br>Ler Print</span>
                         </div>
                         <input type="file" id="input-photo-upload" class="hidden" accept="image/*">
-                        <div id="ocr-loading" class="absolute inset-0 bg-white/90 rounded-2xl flex flex-col items-center justify-center hidden z-10">
+                        <div id="ocr-loading" class="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center hidden z-10 shadow-lg border border-blue-100">
                             <i class="fa-solid fa-circle-notch fa-spin text-blue-600 text-2xl mb-1"></i>
-                            <span class="text-[9px] font-bold text-blue-800 uppercase">Lendo OCR...</span>
+                            <span class="text-[9px] font-black text-blue-800 uppercase tracking-widest mt-1">Lendo...</span>
                         </div>
                     </div>
-                    <span class="text-[8px] font-bold text-slate-400 mt-2 text-center uppercase">Ctrl+V para ler Print</span>
                 </div>
                 
                 <div class="flex-1 mt-1">
@@ -98,14 +121,14 @@
 
                 <div class="pt-4 border-t border-slate-100">
                     <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Telefones</p>
-                    <div class="flex items-center gap-2 mb-2 group bg-slate-50 border border-slate-100 rounded-lg p-1 focus-within:border-blue-300">
-                        <input type="text" id="phone-fixed" class="font-bold text-sm bg-transparent flex-1 outline-none px-2" placeholder="Fixo">
-                        <button id="btn-copy-fixed" class="text-slate-400 hover:text-blue-600 transition p-1.5"><i class="fa-solid fa-copy"></i></button>
+                    <div class="flex items-center gap-2 mb-2 group bg-slate-50 border border-slate-100 rounded-lg p-1 focus-within:border-blue-300 transition">
+                        <input type="text" id="phone-fixed" class="font-bold text-gray-800 text-sm bg-transparent outline-none flex-1 px-2" placeholder="Fixo">
+                        <button id="btn-copy-fixed" class="text-slate-400 hover:text-blue-600 transition p-1.5 rounded" title="Copiar Fixo"><i class="fa-solid fa-copy text-sm"></i></button>
                     </div>
                     <div class="flex gap-3 items-end">
-                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1 flex-1 focus-within:border-blue-300 group">
-                            <input type="text" id="phone-mobile" class="font-bold text-sm bg-transparent flex-1 outline-none px-2" placeholder="WhatsApp / Celular">
-                            <button id="btn-copy-mobile" class="text-slate-400 hover:text-blue-600 transition p-1.5"><i class="fa-solid fa-copy"></i></button>
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1 flex-1 focus-within:border-blue-300 transition group">
+                            <input type="text" id="phone-mobile" class="font-bold text-gray-800 text-sm bg-transparent outline-none flex-1 px-2" placeholder="WhatsApp / Celular">
+                            <button id="btn-copy-mobile" class="text-slate-400 hover:text-blue-600 transition p-1.5 rounded" title="Copiar Celular"><i class="fa-solid fa-copy text-sm"></i></button>
                         </div>
                         <button id="btn-whatsapp" class="bg-emerald-500 hover:bg-emerald-600 text-white h-11 w-11 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-100 transition shrink-0"><i class="fa-brands fa-whatsapp text-2xl"></i></button>
                     </div>
@@ -171,7 +194,6 @@
         let todosOsLeads = [];
         let leadAtualId = null;
 
-        // Formatação Exata (Bate com a Foto)
         const formatarMoedaParaExibicao = (valorDb) => {
             return parseFloat(valorDb || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
@@ -185,7 +207,6 @@
             return val;
         };
 
-        // Cidade Inteligente Arrumada
         function extrairCidade(endereco) {
             if (!endereco || endereco.startsWith("Adicionar")) return "Governador Valadares";
             if (endereco.toLowerCase().includes("governador valadares")) return "Governador Valadares";
@@ -239,7 +260,7 @@
                     <td class="px-6 py-4">${l.nomeContato || l.contato || "-"}</td>
                     <td class="px-6 py-4 font-bold text-gray-600">${maskPhone(l.phone || l.telefone || l.whatsapp)}</td>
                     <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1.5 rounded-lg text-[10px] font-black uppercase">${fase}</span></td>
-                    <td class="px-6 py-4 text-right"><a href="?id=${l.id}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-black text-xs shadow-lg shadow-blue-100">ABRIR FICHA PRO</a></td>
+                    <td class="px-6 py-4 text-right"><a href="?id=${l.id}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-black text-xs shadow-lg shadow-blue-100 transition">ABRIR FICHA PRO</a></td>
                 `;
                 body.appendChild(tr);
             });
@@ -254,8 +275,6 @@
                 const nome = d.name || d.nome || d.titulo || "Sem Nome";
                 const fase = colunasDicionario[d.columnId] || d.columnId || "-";
                 const enderecoFull = d.address || d.endereco || "Adicionar endereço...";
-                
-                // Prioriza a cidade que já está no banco, se não tiver, tenta extrair
                 const cidadeBd = d.cidade || d.city || extrairCidade(enderecoFull);
 
                 if(document.activeElement.id !== "nome-empresa") document.getElementById("nome-empresa").innerText = nome;
@@ -268,22 +287,20 @@
                 if(document.activeElement.id !== "phone-fixed") document.getElementById("phone-fixed").value = maskPhone(d.phoneFixed || d.telefoneFixo);
                 if(document.activeElement.id !== "phone-mobile") document.getElementById("phone-mobile").value = maskPhone(d.phone || d.telefone || d.whatsapp);
                 
-                // Cofre / Valor
                 const dealContainer = document.getElementById("deal-value-container");
                 const dealInput = document.getElementById("lead-dealValue");
                 if(document.activeElement.id !== "lead-dealValue") dealInput.innerText = formatarMoedaParaExibicao(d.dealValue || d.valor);
 
                 if (fase.toLowerCase().includes("fechado")) {
-                    dealContainer.className = "px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm font-black flex items-center gap-1 shadow-sm";
+                    dealContainer.className = "px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm font-black flex items-center gap-1 shadow-sm transition-colors";
                     dealInput.className = "outline-none text-blue-700 min-w-[40px]";
                 } else {
-                    dealContainer.className = "px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-sm font-black flex items-center gap-1 shadow-sm";
+                    dealContainer.className = "px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-sm font-black flex items-center gap-1 shadow-sm transition-colors";
                     dealInput.className = "outline-none text-green-700 min-w-[40px]";
                 }
 
                 if(d.photoUrl || d.foto) document.getElementById("lead-photo").src = d.photoUrl || d.foto;
 
-                // Eventos de Botões Fixos
                 const btnW = document.getElementById("btn-whatsapp");
                 let num = (d.phone || d.telefone || "").toString().replace(/\D/g, "");
                 if(num) {
@@ -292,7 +309,7 @@
                 }
 
                 document.getElementById("btn-maps").onclick = () => {
-                    window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
+                    window.open(`http://googleusercontent.com/maps.google.com/5{encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
                 };
             });
 
@@ -303,11 +320,9 @@
         }
 
         function ativarEventos() {
-            // Copiar
             document.getElementById("btn-copy-fixed").onclick = () => { navigator.clipboard.writeText(document.getElementById("phone-fixed").value.replace(/\D/g,'')); mostrarAvisoSalvo(document.getElementById("phone-fixed").parentNode, "Copiado!"); };
             document.getElementById("btn-copy-mobile").onclick = () => { navigator.clipboard.writeText(document.getElementById("phone-mobile").value.replace(/\D/g,'')); mostrarAvisoSalvo(document.getElementById("phone-mobile").parentNode, "Copiado!"); };
 
-            // Textos Editáveis
             const idToField = {
                 "nome-empresa": "name", "nome-contato": "nomeContato", "lead-city": "cidade", 
                 "endereco-cliente": "address", "lead-description": "description"
@@ -326,7 +341,6 @@
                 el.addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); el.blur(); } });
             });
 
-            // Input Valor Específico
             const elValor = document.getElementById("lead-dealValue");
             elValor.onblur = async (e) => {
                 let texto = e.target.innerText.replace(/\D/g, "");
@@ -339,7 +353,6 @@
             };
             elValor.addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); elValor.blur(); } });
 
-            // Telefones
             ["phone-fixed", "phone-mobile"].forEach(id => {
                 const el = document.getElementById(id);
                 const campoBanco = id === "phone-fixed" ? "phoneFixed" : "phone";
@@ -350,13 +363,37 @@
                 };
             });
 
-            // OCR e UPLOAD - A SEPARAÇÃO INTELIGENTE
+            // =====================================
+            // LÓGICA DO MODAL (UPLOAD VS OCR)
+            // =====================================
             const areaPhoto = document.getElementById("area-photo");
             const fileInput = document.getElementById("input-photo-upload");
+            const modalImagem = document.getElementById("modal-imagem");
+            const btnFecharModal = document.getElementById("btn-fechar-modal");
+            const btnProcurarFoto = document.getElementById("btn-procurar-foto");
             const loadingOcr = document.getElementById("ocr-loading");
 
-            // AÇÃO 1: Clique abre o PC só para trocar a foto
-            areaPhoto.onclick = (e) => { if (!e.target.closest('#ocr-loading')) fileInput.click(); };
+            // Abre o Modal ao clicar na foto
+            areaPhoto.onclick = (e) => { 
+                if (!e.target.closest('#ocr-loading')) {
+                    modalImagem.classList.remove("hidden");
+                    modalImagem.classList.add("flex");
+                }
+            };
+
+            // Fecha o Modal
+            const fecharModal = () => {
+                modalImagem.classList.add("hidden");
+                modalImagem.classList.remove("flex");
+            };
+            btnFecharModal.onclick = fecharModal;
+            modalImagem.onclick = (e) => { if(e.target === modalImagem) fecharModal(); };
+
+            // AÇÃO 1: Procurar no PC
+            btnProcurarFoto.onclick = () => {
+                fileInput.click();
+                fecharModal();
+            };
             
             fileInput.onchange = async (e) => {
                 const file = e.target.files[0];
@@ -372,14 +409,16 @@
                 reader.readAsDataURL(file);
             };
 
-            // AÇÃO 2: Ctrl+V (Colar) aciona a Inteligência OCR
+            // AÇÃO 2: Ctrl+V (Em qualquer lugar da página se a Ficha estiver aberta)
             document.onpaste = async (e) => {
-                if (document.getElementById('view-detalhes').classList.contains('hidden')) return; // Só funciona se a ficha estiver aberta
+                if (document.getElementById('view-detalhes').classList.contains('hidden')) return; 
                 
                 const item = Array.from(e.clipboardData.items).find(x => x.type.indexOf("image") === 0);
                 if (!item) return;
                 
+                fecharModal(); // Fecha o modal se estiver aberto
                 loadingOcr.classList.remove("hidden");
+                
                 try {
                     const result = await Tesseract.recognize(item.getAsFile(), 'por');
                     const text = result.data.text;
@@ -397,7 +436,9 @@
                         
                         if(Object.keys(updates).length > 0) {
                             await updateDoc(doc(db, "leads", leadAtualId), updates);
-                            alert("OCR Finalizado: Dados preenchidos magicamente!");
+                            alert("Inteligência Artificial (OCR) Finalizada:\nDados do cliente extraídos com sucesso!");
+                        } else {
+                            alert("A IA não conseguiu ler o Nome ou Telefone de forma nítida neste print.");
                         }
                     }
                 } catch (err) { console.error(err); alert("Falha na leitura da imagem.");
