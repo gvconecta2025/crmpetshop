@@ -20,27 +20,24 @@
             <button id="btn-fechar-modal" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
-
             <h3 class="text-lg font-black text-slate-800 mb-2 mt-2">Atualizar Imagem / Ler Dados</h3>
             <p class="text-xs text-slate-500 text-center mb-6">Como deseja atualizar as informações deste lead?</p>
-
             <div class="w-full border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-xl p-6 flex flex-col items-center justify-center mb-5 transition hover:bg-blue-50">
                 <i class="fa-solid fa-clipboard text-3xl text-blue-500 mb-3"></i>
                 <p class="text-sm font-bold text-blue-900 mb-1">Pressione <kbd class="bg-white border border-slate-200 text-slate-700 rounded px-1.5 shadow-sm text-xs font-mono mx-1">Ctrl + V</kbd></p>
                 <p class="text-[10px] text-blue-600/80 text-center leading-tight mt-1">Cole um print do Google Maps aqui e a nossa<br>Inteligência Artificial (OCR) fará o cadastro.</p>
             </div>
-
             <div class="w-full flex items-center gap-3 mb-5">
                 <div class="flex-1 h-px bg-slate-200"></div>
                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">OU</span>
                 <div class="flex-1 h-px bg-slate-200"></div>
             </div>
-
             <button id="btn-procurar-foto" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm border border-slate-200">
                 <i class="fa-solid fa-folder-open text-slate-500"></i> Procurar imagem no PC
             </button>
         </div>
     </div>
+
     <nav class="w-20 bg-slate-900 flex flex-col items-center py-6 space-y-8 text-slate-400 border-r border-slate-800 shrink-0 z-20">
         <div class="text-emerald-400 text-2xl font-bold mb-4"><i class="fa-solid fa-paw"></i></div>
         <a href="../index.html" class="hover:text-white transition" title="Voltar ao Kanban"><i class="fa-solid fa-table-columns text-xl"></i></a>
@@ -179,7 +176,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -328,13 +325,20 @@
                 "endereco-cliente": "address", "lead-description": "description"
             };
             
+            // MOTOR BLINDADO CONTRA GHOST BLUR
             Object.keys(idToField).forEach(id => {
                 const el = document.getElementById(id);
+                el.addEventListener('focus', (e) => { el.dataset.oldValue = e.target.innerText.trim(); });
+                
                 el.onblur = async (e) => {
                     let val = e.target.innerText.trim();
                     if(val.includes("Adicionar") || val.includes("Clique para")) return;
+                    if(val === el.dataset.oldValue) return; // Se não mudou nada, NÃO SALVA (Protege o dado!)
+                    
                     if(leadAtualId) {
-                        await updateDoc(doc(db, "leads", leadAtualId), { [idToField[id]]: val });
+                        const updates = { [idToField[id]]: val };
+                        if (id === "nome-empresa") updates.titulo = val; // Mantém retrocompatibilidade
+                        await updateDoc(doc(db, "leads", leadAtualId), updates);
                         mostrarAvisoSalvo(el);
                     }
                 };
@@ -342,8 +346,12 @@
             });
 
             const elValor = document.getElementById("lead-dealValue");
+            elValor.addEventListener('focus', (e) => { elValor.dataset.oldValue = e.target.innerText.trim(); });
             elValor.onblur = async (e) => {
-                let texto = e.target.innerText.replace(/\D/g, "");
+                let valTela = e.target.innerText.trim();
+                if (valTela === elValor.dataset.oldValue) return; // Se não mudou, protege
+                
+                let texto = valTela.replace(/\D/g, "");
                 let valorParaOBanco = parseFloat(texto) / 100 || 0;
                 e.target.innerText = formatarMoedaParaExibicao(valorParaOBanco);
                 if(leadAtualId) {
@@ -356,13 +364,18 @@
             ["phone-fixed", "phone-mobile"].forEach(id => {
                 const el = document.getElementById(id);
                 const campoBanco = id === "phone-fixed" ? "phoneFixed" : "phone";
+                el.addEventListener('focus', (e) => { el.dataset.oldValue = e.target.value; });
                 el.oninput = e => e.target.value = maskPhone(e.target.value);
                 el.onblur = async e => {
+                    if (e.target.value === el.dataset.oldValue) return; // Se não mudou, protege
                     let val = e.target.value.replace(/\D/g, '');
                     if(leadAtualId) { await updateDoc(doc(db, "leads", leadAtualId), { [campoBanco]: val }); mostrarAvisoSalvo(el.parentNode); }
                 };
             });
 
+            // =====================================
+            // MODAL DE IMAGEM & OCR EDUCADO
+            // =====================================
             const areaPhoto = document.getElementById("area-photo");
             const fileInput = document.getElementById("input-photo-upload");
             const modalImagem = document.getElementById("modal-imagem");
@@ -407,19 +420,17 @@
                 reader.readAsDataURL(file);
             };
 
-            // === NOVIDADE: MOSTRAR IMAGEM E LER OCR ===
             document.addEventListener('paste', async (e) => {
                 if (document.getElementById('view-detalhes').classList.contains('hidden')) return; 
                 
                 const item = Array.from(e.clipboardData.items).find(x => x.type.indexOf("image") === 0);
                 if (!item) return;
                 
-                const file = item.getAsFile(); // Pega o ficheiro da imagem
+                const file = item.getAsFile(); 
                 
                 fecharModal(); 
                 loadingOcr.classList.remove("hidden");
 
-                // Mostra a imagem imediatamente na ficha e guarda no Firebase
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
                     document.getElementById("lead-photo").src = ev.target.result;
@@ -440,15 +451,39 @@
                     if(phoneMatch) newPhone = phoneMatch[0].replace(/\D/g, '');
                     
                     if(leadAtualId) {
+                        // Puxa os dados reais atuais para perguntar antes de sobrescrever
+                        const docAt = await getDoc(doc(db, "leads", leadAtualId));
+                        const dAt = docAt.data();
+                        const nomeAt = dAt.name || dAt.nome || dAt.titulo || "";
+                        const telAt = dAt.phone || dAt.telefone || "";
+
                         const updates = {};
-                        if(newName) { updates.name = newName; updates.titulo = newName; }
-                        if(newPhone) updates.phone = newPhone;
+                        
+                        if (newName) {
+                            if (nomeAt === "" || nomeAt.toLowerCase().includes("novo lead") || nomeAt.toLowerCase().includes("sem nome")) {
+                                updates.name = newName; updates.titulo = newName;
+                            } else if (newName !== nomeAt) {
+                                if(confirm(`A IA encontrou o nome "${newName}" no print.\nDeseja substituir o atual "${nomeAt}" por ele?`)) {
+                                    updates.name = newName; updates.titulo = newName;
+                                }
+                            }
+                        }
+                        
+                        if (newPhone) {
+                            if (telAt === "") {
+                                updates.phone = newPhone;
+                            } else if (newPhone !== telAt.replace(/\D/g, '')) {
+                                if(confirm(`A IA encontrou o telefone ${newPhone} no print.\nDeseja substituir o número atual por ele?`)) {
+                                    updates.phone = newPhone;
+                                }
+                            }
+                        }
                         
                         if(Object.keys(updates).length > 0) {
                             await updateDoc(doc(db, "leads", leadAtualId), updates);
-                            alert("Inteligência Artificial (OCR) Finalizada:\nDados do cliente e Imagem atualizados com sucesso!");
+                            alert("Inteligência Artificial (OCR) Finalizada:\nOs dados aprovados foram atualizados!");
                         } else {
-                            alert("Imagem guardada! Mas a IA não conseguiu ler o Nome ou Telefone de forma nítida neste print.");
+                            alert("Imagem salva! Os textos foram mantidos intactos pois você preferiu não substituir.");
                         }
                     }
                 } catch (err) { console.error(err); alert("Falha na leitura da imagem.");
