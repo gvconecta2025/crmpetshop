@@ -72,7 +72,6 @@
     </div>
 
     <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
-        
         <aside class="w-[450px] bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative p-6">
             <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 transition-opacity z-50 shadow-xl">Salvo!</div>
             
@@ -178,7 +177,6 @@
     </div>
 
     <script type="module">
-        // Importamos também a função arrayUnion para adicionar itens de forma segura na linha do tempo
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -273,7 +271,6 @@
                 if (!snap.exists()) return;
                 const d = snap.data();
                 
-                // === ATUALIZAÇÃO DOS DADOS DA FICHA ===
                 const nome = d.name || d.nome || d.titulo || "Sem Nome";
                 const fase = colunasDicionario[d.columnId] || d.columnId || "-";
                 const enderecoFull = d.address || d.endereco || "Adicionar endereço...";
@@ -314,21 +311,41 @@
                     window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
                 };
 
-                // === RENDERIZAÇÃO DA LINHA DO TEMPO (HISTÓRICO) ===
+                // === RENDERIZAÇÃO DA LINHA DO TEMPO (HISTÓRICO COM DIA DA SEMANA E DIAS ATRÁS) ===
                 const historico = d.history || [];
                 const containerHistorico = document.getElementById("container-historico");
                 
                 if(historico.length === 0) {
                     containerHistorico.innerHTML = `<p class="text-xs text-slate-400 pl-4 italic">Nenhum histórico registrado ainda. Que tal fazer uma ligação?</p>`;
                 } else {
-                    // Ordena do mais recente para o mais antigo
                     const historicoOrdenado = [...historico].sort((a, b) => b.createdAt - a.createdAt);
                     
                     containerHistorico.innerHTML = historicoOrdenado.map(h => {
                         const dataObj = new Date(h.createdAt);
-                        const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                         
-                        // Inteligência Visual: Se o texto contém "📅", pintamos o ponto de amarelo/dourado!
+                        // Formatação base (Data e Hora)
+                        const dataNormal = dataObj.toLocaleDateString('pt-BR');
+                        const horaNormal = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        
+                        // Dia da Semana (Ex: Segunda-feira)
+                        let diaSemana = dataObj.toLocaleDateString('pt-BR', { weekday: 'long' });
+                        diaSemana = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+                        
+                        // Cálculo de dias atrás
+                        const hoje = new Date();
+                        hoje.setHours(0, 0, 0, 0);
+                        const dataRegistro = new Date(h.createdAt);
+                        dataRegistro.setHours(0, 0, 0, 0);
+                        const diffDias = Math.floor((hoje.getTime() - dataRegistro.getTime()) / (1000 * 3600 * 24));
+                        
+                        let textoRelativo = "";
+                        if (diffDias === 0) textoRelativo = "Hoje";
+                        else if (diffDias === 1) textoRelativo = "Ontem";
+                        else if (diffDias < 0) textoRelativo = "No futuro"; 
+                        else textoRelativo = `Há ${diffDias} dias`;
+                        
+                        const stringDataFinal = `${diaSemana}, ${dataNormal} às ${horaNormal} &bull; <span class="text-blue-500">${textoRelativo}</span>`;
+                        
                         const isAgendamento = h.text.includes("📅");
                         const corPonto = isAgendamento ? "bg-amber-400 border-amber-100" : "bg-blue-500 border-slate-50";
                         
@@ -337,8 +354,8 @@
                             <div class="absolute -left-2.5 top-1 w-5 h-5 rounded-full ${corPonto} border-4 shadow-sm z-10"></div>
                             <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm transition hover:shadow-md">
                                 <p class="text-sm text-gray-700 whitespace-pre-wrap">${h.text}</p>
-                                <span class="text-[10px] text-gray-400 font-bold mt-2 block flex items-center gap-1">
-                                    <i class="fa-regular fa-clock"></i> ${dataFormatada}
+                                <span class="text-[10px] text-gray-400 font-bold mt-2 block flex items-center gap-1.5">
+                                    <i class="fa-regular fa-clock"></i> ${stringDataFinal}
                                 </span>
                             </div>
                         </div>
@@ -354,7 +371,7 @@
         }
 
         function ativarEventos() {
-            // === SALVAR ATIVIDADE (HISTÓRICO NORMAL) ===
+            // SALVAR ATIVIDADE (HISTÓRICO NORMAL)
             document.getElementById("btn-salvar-nota").onclick = async () => {
                 const txtAnotacao = document.getElementById("texto-anotacao");
                 const texto = txtAnotacao.value.trim();
@@ -362,16 +379,15 @@
                 if (!texto || !leadAtualId) return;
 
                 try {
-                    // arrayUnion empurra o item pro banco sem quebrar o que já existe lá
                     await updateDoc(doc(db, "leads", leadAtualId), {
                         history: arrayUnion({ text: texto, createdAt: Date.now() })
                     });
-                    txtAnotacao.value = ""; // Limpa a caixa
+                    txtAnotacao.value = "";
                     mostrarAvisoSalvo(document.getElementById("btn-salvar-nota"), "Nota Salva!");
                 } catch(e) { console.error(e); alert("Erro ao salvar anotação."); }
             };
 
-            // === SALVAR AGENDAMENTO (TAREFA) ===
+            // SALVAR AGENDAMENTO (TAREFA)
             document.getElementById("btn-agendar-tarefa").onclick = async () => {
                 const inputTarefa = document.getElementById("input-tarefa");
                 const inputData = document.getElementById("input-data");
@@ -386,7 +402,6 @@
                     return;
                 }
 
-                // Cria o texto formatado para aparecer lindo no histórico
                 let textoFormatado = `📅 Agendado: ${tarefa}`;
                 if (data) {
                     const dataBr = data.split('-').reverse().join('/');
@@ -404,7 +419,6 @@
             };
 
 
-            // Demais eventos fixos de edição e cópia...
             document.getElementById("btn-copy-fixed").onclick = () => { navigator.clipboard.writeText(document.getElementById("phone-fixed").value.replace(/\D/g,'')); mostrarAvisoSalvo(document.getElementById("phone-fixed").parentNode, "Copiado!"); };
             document.getElementById("btn-copy-mobile").onclick = () => { navigator.clipboard.writeText(document.getElementById("phone-mobile").value.replace(/\D/g,'')); mostrarAvisoSalvo(document.getElementById("phone-mobile").parentNode, "Copiado!"); };
 
@@ -460,7 +474,6 @@
                 };
             });
 
-            // Lógica do Modal OCR
             const areaPhoto = document.getElementById("area-photo");
             const fileInput = document.getElementById("input-photo-upload");
             const modalImagem = document.getElementById("modal-imagem");
