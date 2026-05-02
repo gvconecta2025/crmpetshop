@@ -9,7 +9,6 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .salvo-sucesso { background-color: #d1fae5; transition: background-color 0.5s ease; }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800">
@@ -19,19 +18,13 @@
         <a href="../index.html" class="hover:text-white transition" title="Voltar ao Kanban"><i class="fa-solid fa-table-columns text-xl"></i></a>
         <a href="index.html" class="text-white bg-slate-800 p-3 rounded-lg transition" title="Diretório de Contatos"><i class="fa-solid fa-address-card text-xl"></i></a>
         <a href="#" class="hover:text-white transition" title="Agenda"><i class="fa-regular fa-calendar-check text-xl"></i></a>
-        <div class="flex-grow"></div>
-        <img src="https://ui-avatars.com/api/?name=PetLojas&background=10b981&color=fff" class="w-10 h-10 rounded-full border-2 border-slate-700" alt="Avatar">
     </nav>
 
     <div id="view-lista" class="hidden flex-1 flex-col bg-slate-50 overflow-hidden">
         <header class="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">Diretório de Leads</h1>
-                <p class="text-sm text-gray-500 mt-1 transition-colors" id="contador-contatos">Carregando contatos...</p>
-            </div>
-            <div class="relative">
-                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
-                <input type="text" id="input-pesquisa" placeholder="Pesquisar por nome ou telefone..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 text-sm">
+                <p class="text-sm text-gray-500 mt-1" id="status-mensagem">Conectando ao banco de dados...</p>
             </div>
         </header>
         
@@ -40,8 +33,8 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase">
                         <tr>
-                            <th class="px-6 py-4 text-left">Nome do Lead (Card)</th>
-                            <th class="px-6 py-4 text-left">Telefone / WhatsApp</th>
+                            <th class="px-6 py-4 text-left">Nome do Lead</th>
+                            <th class="px-6 py-4 text-left">Telefone</th>
                             <th class="px-6 py-4 text-left">Fase (Coluna)</th>
                             <th class="px-6 py-4 text-right">Ação</th>
                         </tr>
@@ -56,31 +49,23 @@
     <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
         
         <aside class="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative">
-            <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded shadow-lg opacity-0 transition-opacity pointer-events-none z-50">Salvo!</div>
             <div class="p-6 border-b border-gray-100">
                 <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-gray-600 mb-6 text-sm font-medium transition flex items-center">
                     <i class="fa-solid fa-arrow-left mr-2"></i> Voltar à Lista
                 </button>
-                <div id="iniciais-cliente" class="flex items-center justify-center w-20 h-20 bg-blue-100 text-blue-600 rounded-full text-2xl font-bold mb-4 mx-auto uppercase pointer-events-none">..</div>
-                <h2 id="nome-empresa" contenteditable="true" class="text-xl font-bold text-center text-gray-900 leading-tight outline-none focus:bg-gray-50 rounded p-1 transition cursor-text border border-transparent hover:border-gray-200">Carregando...</h2>
-                <div class="flex justify-center mt-3 mb-6 pointer-events-none">
-                    <span id="tag-coluna" class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full transition-all">Fase</span>
+                
+                <div id="iniciais-cliente" class="flex items-center justify-center w-20 h-20 bg-blue-100 text-blue-600 rounded-full text-2xl font-bold mb-4 mx-auto uppercase">..</div>
+                
+                <h2 id="nome-empresa" class="text-xl font-bold text-center text-gray-900 leading-tight">Carregando...</h2>
+                
+                <div class="flex justify-center mt-3 mb-6">
+                    <span id="tag-coluna" class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">Fase</span>
                 </div>
-                <button id="btn-whatsapp" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-emerald-100 transition flex items-center justify-center gap-2 mb-8">
-                    <i class="fa-brands fa-whatsapp text-xl"></i> Chamar WhatsApp
-                </button>
+
                 <div class="space-y-5 text-sm">
                     <div>
-                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Contato <i class="fa-solid fa-pen text-[9px] ml-1"></i></p>
-                        <p id="nome-contato" contenteditable="true" class="font-medium text-gray-800 outline-none focus:bg-gray-50 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Telefone Principal <i class="fa-solid fa-pen text-[9px] ml-1"></i></p>
-                        <p id="telefone-cliente" contenteditable="true" class="font-medium text-gray-800 outline-none focus:bg-gray-50 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Localização <i class="fa-solid fa-pen text-[9px] ml-1"></i></p>
-                        <p id="endereco-cliente" contenteditable="true" class="font-medium text-gray-800 text-xs outline-none focus:bg-gray-50 rounded p-1 -ml-1 transition cursor-text border border-transparent hover:border-gray-200">...</p>
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Telefone Principal</p>
+                        <p id="telefone-cliente" class="font-medium text-gray-800">...</p>
                     </div>
                 </div>
             </div>
@@ -91,14 +76,7 @@
                 <h3 class="text-lg font-bold text-gray-800">Linha do Tempo</h3>
             </header>
             <div class="flex-1 p-6 overflow-y-auto no-scrollbar">
-                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8">
-                    <textarea id="texto-anotacao" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none" rows="3" placeholder="O que aconteceu nesta conversa?"></textarea>
-                    <div class="flex justify-end mt-3">
-                        <button id="btn-salvar-nota" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition">Registrar Atividade</button>
-                    </div>
-                </div>
-                <div id="container-historico" class="relative border-l-2 border-gray-200 ml-4 space-y-8 pb-10">
-                    </div>
+                <p class="text-sm text-gray-500 italic">Módulo de histórico será ativado na próxima etapa.</p>
             </div>
         </main>
 
@@ -123,9 +101,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // SUAS CHAVES REAIS DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -135,182 +112,116 @@
             appId: "1:381013124221:web:48f398a62ce40b7db6fd14"
         };
 
-        // VARIÁVEL VITAL: Qual é o nome da coleção que o seu Kanban salva os cards?
-        // Troque "leads" por "cards" ou "tarefas" caso não apareça nada.
-        const NOME_DA_COLECAO = "leads"; 
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        try {
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
+        // ==========================================
+        // Dicionário de Colunas (Para traduzir o ID no nome)
+        // ==========================================
+        let colunasDicionario = {};
+
+        async function carregarDicionarioDeColunas() {
+            const colsSnap = await getDocs(collection(db, "columns"));
+            colsSnap.forEach(doc => {
+                colunasDicionario[doc.id] = doc.data().title;
+            });
+        }
+
+        async function iniciarSistema() {
+            const parametros = new URLSearchParams(window.location.search);
+            const idDoCard = parametros.get('id');
+
+            // Primeiro carrega as colunas para sabermos os nomes das Fases
+            await carregarDicionarioDeColunas();
+
+            if (idDoCard) {
+                document.getElementById('view-lista').classList.add('hidden');
+                document.getElementById('view-detalhes').classList.remove('hidden');
+                await puxarFichaDoCard(idDoCard);
+            } else {
+                document.getElementById('view-lista').classList.remove('hidden');
+                document.getElementById('view-detalhes').classList.add('hidden');
+                await puxarTodosOsCards();
+            }
+        }
+
+        async function puxarTodosOsCards() {
+            const statusMsg = document.getElementById('status-mensagem');
+            const tabela = document.getElementById('tabela-contatos');
             
-            let todosOsLeads = [];
-            let unsubscribeLista = null;
-            let unsubscribeFicha = null;
-            let leadAtualId = null;
-
-            // Função de inicialização central
-            function init() {
-                const parametros = new URLSearchParams(window.location.search);
-                const leadId = parametros.get('id');
-
-                if (leadId) {
-                    document.getElementById('view-lista').classList.add('hidden');
-                    document.getElementById('view-detalhes').classList.remove('hidden');
-                    carregarFichaEmTempoReal(leadId);
-                } else {
-                    document.getElementById('view-lista').classList.remove('hidden');
-                    document.getElementById('view-detalhes').classList.add('hidden');
-                    carregarListaGeralEmTempoReal();
-                }
-            }
-
-            // FUNÇÕES DO DIRETÓRIO
-            function carregarListaGeralEmTempoReal() {
-                const contador = document.getElementById('contador-contatos');
+            try {
+                // Aqui usamos exatamente o nome que está no seu código fonte: "leads"
+                const querySnapshot = await getDocs(collection(db, "leads"));
+                const cards = [];
                 
-                if(unsubscribeLista) unsubscribeLista();
-                
-                try {
-                    unsubscribeLista = onSnapshot(collection(db, NOME_DA_COLECAO), (querySnapshot) => {
-                        todosOsLeads = [];
-                        querySnapshot.forEach(doc => { todosOsLeads.push({ id: doc.id, ...doc.data() }); });
-                        
-                        contador.innerText = `${todosOsLeads.length} prospectos encontrados.`;
-                        contador.classList.remove('text-red-600', 'font-bold');
-                        contador.classList.add('text-green-600');
-                        
-                        const termo = document.getElementById('input-pesquisa').value.toLowerCase();
-                        aplicarFiltro(termo);
+                querySnapshot.forEach((doc) => {
+                    cards.push({ id: doc.id, ...doc.data() });
+                });
 
-                    }, (error) => {
-                        // ARMADILHA DE ERRO: Se o firebase bloquear a leitura, o aviso aparece aqui!
-                        console.error("Erro no Firebase:", error);
-                        contador.innerText = `⚠️ ERRO FIREBASE: ${error.message}`;
-                        contador.classList.add('text-red-600', 'font-bold');
-                    });
-                } catch(e) {
-                    contador.innerText = `⚠️ ERRO CÓDIGO: ${e.message}`;
-                    contador.classList.add('text-red-600', 'font-bold');
-                }
-
-                document.getElementById('input-pesquisa').oninput = (e) => aplicarFiltro(e.target.value.toLowerCase());
-            }
-
-            function aplicarFiltro(termo) {
-                const filtrados = todosOsLeads.filter(l => 
-                    (l.titulo || "").toLowerCase().includes(termo) || 
-                    (l.telefone || "").includes(termo)
-                );
-                renderizarLista(filtrados);
-            }
-
-            function renderizarLista(lista) {
-                const tbody = document.getElementById('tabela-contatos');
-                tbody.innerHTML = '';
-                
-                // Tratamento se a coleção estiver vazia
-                if(lista.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500 font-medium">Nenhum dado encontrado na coleção "${NOME_DA_COLECAO}".</td></tr>`;
+                if (cards.length === 0) {
+                    statusMsg.innerHTML = `<span class="text-amber-500 font-bold">Conexão OK, mas não há leads cadastrados ainda.</span>`;
                     return;
                 }
 
-                lista.forEach(lead => {
-                    const nomeMostrado = lead.titulo || "Sem Nome"; 
+                statusMsg.innerHTML = `<span class="text-green-600 font-bold">${cards.length} leads carregados com sucesso!</span>`;
+                tabela.innerHTML = ""; 
+
+                cards.forEach(card => {
+                    // Puxando os campos exatos do seu código Kanban
+                    const nome = card.name || "Sem Nome";
+                    const telefone = card.phone || "-";
+                    // Traduz o código da coluna (ex: col-123) para o nome (ex: Prospecção)
+                    const fase = colunasDicionario[card.columnId] || "Sem Fase";
+
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition border-b border-gray-100";
+                    tr.className = "hover:bg-slate-50 border-b border-gray-100";
                     tr.innerHTML = `
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">${nomeMostrado.substring(0,2)}</div>
-                                <span class="text-sm font-bold text-gray-900">${nomeMostrado}</span>
-                            </div>
+                        <td class="px-6 py-4 font-bold text-gray-900 flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs uppercase shrink-0">${nome.substring(0,2)}</div>
+                            <span class="truncate">${nome}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">${lead.telefone || '-'}</td>
+                        <td class="px-6 py-4 text-gray-600">${telefone}</td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase">
-                                ${lead.columnId || 'Sem Coluna'}
-                            </span>
+                            <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold uppercase">${fase}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <a href="?id=${lead.id}" class="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-bold shadow-sm hover:bg-slate-50 transition">Ver Ficha</a>
+                            <a href="?id=${card.id}" class="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-lg font-bold shadow-sm hover:bg-slate-50">Abrir Ficha</a>
                         </td>
                     `;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            // FUNÇÕES DA FICHA (MANTIDAS COMO ANTES)
-            function carregarFichaEmTempoReal(id) {
-                leadAtualId = id;
-                if(unsubscribeFicha) unsubscribeFicha();
-                unsubscribeFicha = onSnapshot(doc(db, NOME_DA_COLECAO, id), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const d = docSnap.data();
-                        const nomeFinal = d.titulo || "Lead sem Nome";
-                        
-                        if(document.activeElement.id !== "nome-empresa") {
-                            document.getElementById("nome-empresa").innerText = nomeFinal;
-                            document.getElementById("iniciais-cliente").innerText = nomeFinal.substring(0,2);
-                        }
-                        if(document.activeElement.id !== "nome-contato") {
-                            document.getElementById("nome-contato").innerText = d.nomeContato || "Adicionar contato";
-                        }
-                        if(document.activeElement.id !== "telefone-cliente") {
-                            document.getElementById("telefone-cliente").innerText = d.telefone || "Adicionar telefone";
-                            const btn = document.getElementById("btn-whatsapp");
-                            const num = (d.telefone || "").replace(/\D/g, '');
-                            if(num) {
-                                btn.onclick = () => {
-                                    window.open(`https://wa.me/55${num}?text=${encodeURIComponent(`Olá ${nomeFinal}!`)}`, '_blank');
-                                };
-                            }
-                        }
-                        if(document.activeElement.id !== "endereco-cliente") {
-                            document.getElementById("endereco-cliente").innerText = d.endereco || "Adicionar endereço";
-                        }
-                        document.getElementById("tag-coluna").innerText = d.columnId || "Lead";
-                    }
+                    tabela.appendChild(tr);
                 });
 
-                ativarEdicao("nome-empresa", "titulo");
-                ativarEdicao("nome-contato", "nomeContato");
-                ativarEdicao("telefone-cliente", "telefone");
-                ativarEdicao("endereco-cliente", "endereco");
+            } catch (erro) {
+                console.error(erro);
+                statusMsg.innerHTML = `<span class="text-red-600 font-bold">Erro Crítico: ${erro.message}</span>`;
             }
-
-            function ativarEdicao(elementoId, campoFirebase) {
-                const el = document.getElementById(elementoId);
-                const newEl = el.cloneNode(true);
-                el.parentNode.replaceChild(newEl, el);
-                
-                newEl.addEventListener('blur', async (e) => {
-                    const novoValor = e.target.innerText.trim();
-                    if(novoValor.includes("Adicionar") || !leadAtualId) return;
-                    try {
-                        await updateDoc(doc(db, NOME_DA_COLECAO, leadAtualId), { [campoFirebase]: novoValor });
-                        mostrarAvisoSalvo(newEl);
-                    } catch(err) { console.error(err); }
-                });
-                newEl.addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); newEl.blur(); } });
-            }
-
-            function mostrarAvisoSalvo(elemento) {
-                elemento.classList.add('salvo-sucesso');
-                setTimeout(() => elemento.classList.remove('salvo-sucesso'), 600);
-                const aviso = document.getElementById('aviso-salvo');
-                aviso.classList.remove('opacity-0');
-                setTimeout(() => aviso.classList.add('opacity-0'), 1500);
-            }
-
-            // GATILHO DIRETO! (Sem depender de window.onload)
-            init();
-
-        } catch (fatalError) {
-            // ARMADILHA DE ERRO CRÍTICO
-            console.error("Erro Crítico:", fatalError);
-            document.getElementById('contador-contatos').innerText = `⚠️ FALHA CRÍTICA: ${fatalError.message}`;
-            document.getElementById('contador-contatos').classList.add('text-red-600', 'font-bold');
         }
+
+        async function puxarFichaDoCard(id) {
+            try {
+                const docSnap = await getDoc(doc(db, "leads", id));
+                if (docSnap.exists()) {
+                    const card = docSnap.data();
+                    
+                    const nome = card.name || "Sem Nome";
+                    const telefone = card.phone || "-";
+                    const fase = colunasDicionario[card.columnId] || "Sem Fase";
+
+                    document.getElementById("nome-empresa").innerText = nome;
+                    document.getElementById("telefone-cliente").innerText = telefone;
+                    document.getElementById("tag-coluna").innerText = fase;
+                    document.getElementById("iniciais-cliente").innerText = nome.substring(0, 2);
+                } else {
+                    alert("Este lead não foi encontrado no banco de dados.");
+                    window.location.href = "index.html";
+                }
+            } catch (erro) {
+                console.error(erro);
+                alert("Ocorreu um erro ao tentar ler a ficha.");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', iniciarSistema);
     </script>
 </body>
 </html>
