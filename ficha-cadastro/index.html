@@ -28,14 +28,17 @@
                 <h1 class="text-2xl font-bold text-gray-800">Diretório Prospecção</h1>
                 <p class="text-sm text-gray-500 mt-1" id="status-mensagem">Buscando leads...</p>
             </div>
-            <input type="text" id="input-pesquisa" placeholder="Pesquisar..." class="pl-4 pr-4 py-2 border border-gray-300 rounded-lg w-80 text-sm">
+            <div class="relative">
+                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                <input type="text" id="input-pesquisa" placeholder="Pesquisar por nome ou telefone..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-80 text-sm shadow-inner outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
         </header>
         <main class="flex-1 p-8 overflow-y-auto no-scrollbar">
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase">
                         <tr>
-                            <th class="px-6 py-4 text-left">Empresa</th>
+                            <th class="px-6 py-4 text-left">Empresa (Lead)</th>
                             <th class="px-6 py-4 text-left">Contato</th>
                             <th class="px-6 py-4 text-left">WhatsApp</th>
                             <th class="px-6 py-4 text-left">Fase</th>
@@ -49,67 +52,137 @@
     </div>
 
     <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
-        <aside class="w-[450px] bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative p-6">
-            <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 transition-opacity z-50">Salvo!</div>
-            <button onclick="window.location.href='index.html'" class="text-slate-500 mb-6 text-sm flex items-center bg-slate-100 px-3 py-1.5 rounded-lg w-fit">
-                <i class="fa-solid fa-arrow-left mr-2"></i> Voltar
-            </button>
+        
+        <aside class="w-[480px] bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative">
+            <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 transition-opacity z-50 shadow-xl">Salvo!</div>
             
-            <div class="flex gap-4 mb-6">
-                <div class="relative group cursor-pointer" id="area-photo">
-                    <img id="lead-photo" src="https://ui-avatars.com/api/?name=PS&background=e2e8f0" class="w-24 h-24 rounded-2xl border-4 border-slate-100 shadow-inner">
-                    <input type="file" id="input-photo-upload" class="hidden" accept="image/*">
-                </div>
-                <div class="flex-1">
-                    <h2 id="nome-empresa" contenteditable="true" class="text-2xl font-black outline-none border-b border-transparent hover:border-slate-200">...</h2>
-                    <div class="flex gap-2 mt-2">
-                        <span id="tag-coluna" class="px-2 py-1 bg-slate-100 text-[10px] font-black rounded uppercase">Fase</span>
-                        <span id="deal-value-container" class="px-2 py-1 bg-slate-50 border rounded text-[10px] font-black">
-                            R$ <span id="lead-dealValue" contenteditable="true">0,00</span>
-                        </span>
+            <div class="p-6">
+                <button onclick="window.location.href='index.html'" class="text-slate-500 hover:text-slate-800 mb-6 text-sm font-bold flex items-center bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg w-fit transition">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Voltar
+                </button>
+                
+                <div class="flex gap-4 mb-6 items-start">
+                    <div class="relative group cursor-pointer shrink-0" id="area-photo" title="Clique ou cole imagem para OCR">
+                        <img id="lead-photo" src="https://ui-avatars.com/api/?name=PS&background=e2e8f0" class="w-24 h-24 rounded-2xl border-4 border-slate-100 shadow-inner object-cover">
+                        <div class="absolute inset-0 bg-black/50 rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity space-y-1">
+                            <i class="fa-solid fa-upload text-xl"></i>
+                            <span class="text-[9px] font-bold uppercase">Mudar/OCR</span>
+                        </div>
+                        <input type="file" id="input-photo-upload" class="hidden" accept="image/*">
+                        <div id="ocr-loading" class="absolute inset-0 bg-white/90 rounded-2xl flex flex-col items-center justify-center hidden">
+                            <i class="fa-solid fa-circle-notch fa-spin text-blue-600 text-2xl mb-1"></i>
+                            <span class="text-[9px] font-bold text-blue-800 uppercase">Lendo...</span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="space-y-4">
-                <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">Contato</p>
-                    <p id="nome-contato" contenteditable="true" class="font-bold text-sm outline-none">...</p>
-                </div>
-                <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">Cidade</p>
-                    <p id="lead-city" contenteditable="true" class="font-bold text-sm outline-none">...</p>
-                </div>
-                <div class="pt-4 border-t">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Telefones</p>
-                    <div class="flex items-center gap-2 mb-2">
-                        <input type="text" id="phone-fixed" class="font-bold text-sm bg-slate-50 p-2 rounded-lg flex-1 outline-none" placeholder="Fixo">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="phone-mobile" class="font-bold text-sm bg-slate-50 p-2 rounded-lg flex-1 outline-none" placeholder="WhatsApp">
-                        <button id="btn-whatsapp" class="bg-emerald-500 text-white h-10 w-10 rounded-lg flex items-center justify-center"><i class="fa-brands fa-whatsapp text-xl"></i></button>
+                    <div class="flex-1 mt-1">
+                        <h2 id="nome-empresa" contenteditable="true" class="text-2xl font-black text-slate-900 leading-tight outline-none border-b border-transparent hover:border-slate-200 focus:bg-slate-50 rounded p-1 transition cursor-text">...</h2>
+                        
+                        <div class="flex flex-wrap items-center gap-3 mt-3">
+                            <span id="tag-coluna" class="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-black rounded-lg uppercase shadow-sm">Fase</span>
+                            <span id="deal-value-container" class="px-3 py-1.5 bg-slate-50 border rounded-lg text-sm font-black shadow-sm flex items-center gap-1">
+                                R$ <span id="lead-dealValue" contenteditable="true" class="outline-none min-w-[40px]">0,00</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="pt-4 border-t">
-                    <div class="flex justify-between items-center mb-1">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Localização</p>
-                        <button id="btn-maps" class="text-blue-600 text-[10px] font-bold bg-blue-50 px-2 py-1 rounded">Ver no Maps</button>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-tie text-slate-300"></i> Contato <i class="fa-solid fa-pen text-[9px]"></i>
+                        </p>
+                        <p id="nome-contato" contenteditable="true" class="font-bold text-gray-800 text-sm outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-100 rounded px-1.5 py-1 -ml-1.5 transition cursor-text hover:border-gray-200 border border-transparent">...</p>
                     </div>
-                    <p id="endereco-cliente" contenteditable="true" class="text-xs outline-none">...</p>
+                    <div>
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-city text-slate-300"></i> Cidade <i class="fa-solid fa-bolt text-amber-400 text-[10px]" title="Extraída automaticamente do endereço"></i>
+                        </p>
+                        <p id="lead-city" class="font-bold text-slate-500 bg-slate-50 text-sm outline-none rounded px-2 py-1 border border-slate-100 select-none">Governador Valadares</p>
+                    </div>
                 </div>
-                <div class="pt-4 border-t">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">Descrição</p>
-                    <div id="lead-description" contenteditable="true" class="text-xs outline-none min-h-[50px]">...</div>
+
+                <div class="space-y-4 mb-6 border-t border-slate-100 pt-5">
+                    <div>
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-phone-office text-slate-300"></i> Telefone Fixo <i class="fa-solid fa-pen text-[9px]"></i>
+                        </p>
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1 group focus-within:border-blue-300 transition">
+                            <input type="text" id="phone-fixed" class="font-bold text-gray-800 text-sm bg-transparent outline-none flex-1 px-2" placeholder="(XX) XXXX-XXXX">
+                            <button id="btn-copy-fixed" class="text-slate-400 hover:text-blue-600 transition p-1.5 rounded" title="Copiar Fixo"><i class="fa-solid fa-copy text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-end">
+                        <div class="flex-1">
+                            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                <i class="fa-solid fa-mobile-screen text-slate-300"></i> Celular / WhatsApp <i class="fa-solid fa-pen text-[9px]"></i>
+                            </p>
+                            <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1 group focus-within:border-blue-300 transition">
+                                <input type="text" id="phone-mobile" class="font-bold text-gray-800 text-sm bg-transparent outline-none flex-1 px-2" placeholder="(XX) 9XXXX-XXXX">
+                                <button id="btn-copy-mobile" class="text-slate-400 hover:text-blue-600 transition p-1.5 rounded" title="Copiar Celular"><i class="fa-solid fa-copy text-sm"></i></button>
+                            </div>
+                        </div>
+                        <button id="btn-whatsapp" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-11 w-11 rounded-lg shadow-lg shadow-emerald-100 transition flex items-center justify-center shrink-0" title="Chamar no WhatsApp">
+                            <i class="fa-brands fa-whatsapp text-2xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-6 border-t border-slate-100 pt-5">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-dot text-slate-300"></i> Endereço Completo <i class="fa-solid fa-pen text-[9px]"></i>
+                        </p>
+                        <button id="btn-maps" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md transition">
+                            <i class="fa-solid fa-map-location-dot"></i> Maps
+                        </button>
+                    </div>
+                    <p id="endereco-cliente" contenteditable="true" class="font-medium text-gray-800 text-xs outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-100 rounded px-1.5 py-1 -ml-1.5 transition cursor-text hover:border-gray-200 border border-transparent">...</p>
+                </div>
+
+                <div class="border-t border-slate-100 pt-5">
+                    <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-align-left text-slate-300"></i> Descrição / Resumo <i class="fa-solid fa-pen text-[9px]"></i>
+                    </p>
+                    <div id="lead-description" contenteditable="true" class="font-medium text-gray-800 text-xs outline-none focus:bg-gray-50 focus:ring-2 focus:ring-blue-100 rounded px-1.5 py-1 -ml-1.5 transition cursor-text hover:border-gray-200 border border-transparent min-h-[60px] resize-y">...</div>
                 </div>
             </div>
         </aside>
 
-        <main class="flex-1 bg-slate-50 flex flex-col p-6 overflow-y-auto no-scrollbar">
-            <header class="mb-6"><h3 class="text-lg font-bold">Linha do Tempo</h3></header>
-            <div id="container-historico" class="relative border-l-2 border-slate-200 ml-4 space-y-6">
-                <p class="text-xs text-slate-400 pl-4 italic">Histórico será ativado em breve.</p>
+        <main class="flex-1 bg-slate-50 flex flex-col border-r border-gray-200">
+            <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+                <h3 class="text-lg font-bold text-gray-800">Linha do Tempo</h3>
+            </header>
+            <div class="flex-1 p-6 overflow-y-auto no-scrollbar">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8">
+                    <textarea id="texto-anotacao" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition resize-none" rows="3" placeholder="Registre a última conversa..."></textarea>
+                    <div class="flex justify-end mt-3">
+                        <button id="btn-salvar-nota" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-black transition shadow-lg shadow-blue-100">Registrar Atividade</button>
+                    </div>
+                </div>
+                <div id="container-historico" class="relative border-l-2 border-gray-200 ml-4 space-y-6">
+                    <p class="text-xs text-slate-400 pl-4 italic">Histórico será ativado em breve.</p>
+                </div>
             </div>
         </main>
+
+        <aside class="w-80 bg-white flex flex-col shrink-0">
+            <header class="p-6 border-b border-gray-100 bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-regular fa-calendar-check text-blue-600"></i> Agendamentos
+                </h3>
+            </header>
+            <div class="p-6">
+                <div class="p-4 bg-blue-50 border border-blue-100 rounded-xl shadow-inner">
+                    <input type="text" placeholder="Tarefa (ex: Retornar amanhã)" class="w-full mb-3 text-sm p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500">
+                    <div class="flex gap-2 mb-3">
+                        <input type="date" class="w-full text-xs p-2 rounded-lg border border-gray-300">
+                        <input type="time" class="w-full text-xs p-2 rounded-lg border border-gray-300">
+                    </div>
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-black py-2.5 rounded-lg transition shadow-md shadow-blue-100">Agendar Próximo Passo</button>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script type="module">
@@ -129,15 +202,41 @@
         const db = getFirestore(app);
         let colunasDicionario = {};
         let todosOsLeads = [];
+        let unsubscribeLista = null;
+        let unsubscribeFicha = null;
         let leadAtualId = null;
+
+        // Utilitários de Máscara e Extração
+        const maskMoney = (value) => {
+            let cleanValue = (value || "").toString().replace(/\D/g, "");
+            let val = parseFloat(cleanValue) / 100 || 0;
+            return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace("R$", "").trim();
+        };
 
         const maskPhone = (v) => {
             if(!v) return "";
             let val = v.toString().replace(/\D/g, "");
+            if(val.length > 11) val = val.substring(0, 11);
             if(val.length > 10) return val.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
             if(val.length > 6) return val.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
+            if(val.length > 2) return val.replace(/^(\d{2})(\d{0,4})$/, "($1) $2");
             return val;
         };
+
+        // Inteligência para extrair cidade do endereço
+        function extrairCidade(endereco) {
+            if (!endereco || endereco.startsWith("Adicionar")) return "Governador Valadares";
+            if (endereco.toLowerCase().includes("governador valadares")) return "Governador Valadares";
+            
+            const partes = endereco.split(/[,|-]/).map(p => p.trim()).filter(p => p.length > 0);
+            if (partes.length > 1) {
+                 const ultima = partes[partes.length - 1];
+                 // Ignora UF (ex: MG) se tiver mais que 2 partes
+                 if (ultima.length === 2 && partes.length > 2) return partes[partes.length - 2]; 
+                 return ultima;
+            }
+            return "Governador Valadares";
+        }
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
@@ -155,11 +254,21 @@
         }
 
         function carregarLista() {
-            onSnapshot(collection(db, "leads"), (snap) => {
+            if(unsubscribeLista) unsubscribeLista();
+            unsubscribeLista = onSnapshot(collection(db, "leads"), (snap) => {
                 todosOsLeads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                document.getElementById('status-mensagem').innerText = `${todosOsLeads.length} prospectos.`;
-                renderizar(todosOsLeads);
+                document.getElementById('status-mensagem').innerText = `${todosOsLeads.length} prospectos cadastrados.`;
+                aplicarFiltro(document.getElementById('input-pesquisa').value.toLowerCase());
             });
+            document.getElementById('input-pesquisa').oninput = (e) => aplicarFiltro(e.target.value.toLowerCase());
+        }
+
+        function aplicarFiltro(termo) {
+            const filtrados = todosOsLeads.filter(l => 
+                (l.name || l.nome || l.titulo || l.nomeEmpresa || "").toLowerCase().includes(termo) || 
+                (l.phone || l.telefone || "").includes(termo)
+            );
+            renderizar(filtrados);
         }
 
         function renderizar(lista) {
@@ -168,14 +277,20 @@
             lista.forEach(l => {
                 const nome = l.name || l.nome || l.titulo || l.nomeEmpresa || "Sem Nome";
                 const fase = colunasDicionario[l.columnId] || l.columnId || "-";
+                const celular = l.phone || l.telefone || l.whatsapp || "-";
                 const tr = document.createElement('tr');
-                tr.className = "border-b text-sm hover:bg-slate-50";
+                tr.className = "border-b text-sm hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td class="px-6 py-4 font-bold">${nome}</td>
-                    <td class="px-6 py-4">${l.nomeContato || "-"}</td>
-                    <td class="px-6 py-4">${maskPhone(l.phone || l.telefone)}</td>
-                    <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-[10px] font-black uppercase">${fase}</span></td>
-                    <td class="px-6 py-4 text-right"><a href="?id=${l.id}" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-black text-xs">ABRIR FICHA PRO</a></td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${l.photoUrl || `https://ui-avatars.com/api/?name=${nome.substring(0,2)}&background=e2e8f0`}" class="w-8 h-8 rounded-lg object-cover">
+                            <span class="font-bold text-gray-900">${nome}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 font-medium text-slate-700">${l.nomeContato || l.contato || "-"}</td>
+                    <td class="px-6 py-4 font-bold text-gray-600">${maskPhone(celular)}</td>
+                    <td class="px-6 py-4"><span class="bg-slate-100 text-slate-700 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm block w-fit">${fase}</span></td>
+                    <td class="px-6 py-4 text-right"><a href="?id=${l.id}" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-black text-xs shadow-lg shadow-blue-100 hover:bg-blue-700 transition">ABRIR FICHA PRO</a></td>
                 `;
                 body.appendChild(tr);
             });
@@ -183,32 +298,183 @@
 
         function carregarFicha(id) {
             leadAtualId = id;
-            onSnapshot(doc(db, "leads", id), (snap) => {
+            if(unsubscribeFicha) unsubscribeFicha();
+
+            unsubscribeFicha = onSnapshot(doc(db, "leads", id), (snap) => {
                 if (!snap.exists()) return;
                 const d = snap.data();
-                const nome = d.name || d.nome || d.titulo || "Sem Nome";
-                const fase = colunasDicionario[d.columnId] || d.columnId || "-";
-
-                document.getElementById("nome-empresa").innerText = nome;
-                document.getElementById("tag-coluna").innerText = fase;
-                document.getElementById("nome-contato").innerText = d.nomeContato || "Adicionar...";
-                document.getElementById("phone-fixed").value = maskPhone(d.phoneFixed);
-                document.getElementById("phone-mobile").value = maskPhone(d.phone || d.telefone);
-                document.getElementById("endereco-cliente").innerText = d.address || d.endereco || "Adicionar...";
                 
+                const nome = d.name || d.nome || d.titulo || d.nomeEmpresa || "Sem Nome";
+                const fase = colunasDicionario[d.columnId] || d.columnId || "-";
+                const enderecoFull = d.address || d.endereco || "Adicionar endereço...";
+                const cidadeCalculada = extrairCidade(enderecoFull);
+
+                if(document.activeElement.id !== "nome-empresa") document.getElementById("nome-empresa").innerText = nome;
+                document.getElementById("tag-coluna").innerText = fase;
+                
+                if(document.activeElement.id !== "nome-contato") document.getElementById("nome-contato").innerText = d.nomeContato || d.contato || "Adicionar contato";
+                
+                // Cidade automática
+                document.getElementById("lead-city").innerText = cidadeCalculada;
+
+                if(document.activeElement.id !== "phone-fixed") document.getElementById("phone-fixed").value = maskPhone(d.phoneFixed || d.telefoneFixo || "");
+                if(document.activeElement.id !== "phone-mobile") document.getElementById("phone-mobile").value = maskPhone(d.phone || d.telefone || d.whatsapp || "");
+                
+                if(document.activeElement.id !== "endereco-cliente") document.getElementById("endereco-cliente").innerText = enderecoFull;
+                if(document.activeElement.id !== "lead-description") document.getElementById("lead-description").innerText = d.description || d.descricao || "Clique para adicionar...";
+                
+                const dealContainer = document.getElementById("deal-value-container");
+                const dealInput = document.getElementById("lead-dealValue");
+                if(document.activeElement.id !== "lead-dealValue") dealInput.innerText = maskMoney((d.dealValue || d.valor || 0).toString());
+
+                // Cores do Cofre (Valor)
+                if (fase.toLowerCase().includes("fechado")) {
+                    dealContainer.className = "px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm font-black transition-colors shadow-sm flex items-center gap-1";
+                    dealInput.className = "outline-none text-blue-700 min-w-[40px]";
+                } else {
+                    dealContainer.className = "px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-sm font-black transition-colors shadow-sm flex items-center gap-1";
+                    dealInput.className = "outline-none text-green-700 min-w-[40px]";
+                }
+
                 if(d.photoUrl) document.getElementById("lead-photo").src = d.photoUrl;
 
+                // Ações Botões
                 const btnW = document.getElementById("btn-whatsapp");
-                let num = (d.phone || d.telefone || "").toString().replace(/\D/g, "");
+                let num = (d.phone || d.telefone || d.whatsapp || "").toString().replace(/\D/g, "");
                 if(num) {
-                    if(!num.startsWith("55")) num = "55" + num;
-                    btnW.onclick = () => window.open(`https://wa.me/${num}`, '_blank');
+                    if(!num.startsWith("55") && num.length >= 10) num = "55" + num;
+                    btnW.onclick = () => window.open(`https://wa.me/${num}?text=${encodeURIComponent('Olá, pessoal da ' + nome + '!')}`, '_blank');
                 }
 
                 document.getElementById("btn-maps").onclick = () => {
-                    window.open(`https://www.google.com/maps/search/${encodeURIComponent(nome + ' ' + (d.address || ''))}`, '_blank');
+                    // API Oficial do Google Maps Search
+                    const query = `${nome} ${enderecoFull} ${cidadeCalculada}`;
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
                 };
             });
+
+            // Ativa Eventos Fixos apenas uma vez para não duplicar
+            if (!window.eventosFixosCarregados) {
+                ativarEventosDeCopia();
+                ativarEdicaoInline();
+                ativarModuloOCR();
+                window.eventosFixosCarregados = true;
+            }
+        }
+
+        function ativarEventosDeCopia() {
+            document.getElementById("btn-copy-fixed").onclick = () => { 
+                navigator.clipboard.writeText(document.getElementById("phone-fixed").value.replace(/\D/g, '')); 
+                mostrarAvisoSalvo(document.getElementById("phone-fixed"), "Copiado!"); 
+            };
+            document.getElementById("btn-copy-mobile").onclick = () => { 
+                navigator.clipboard.writeText(document.getElementById("phone-mobile").value.replace(/\D/g, '')); 
+                mostrarAvisoSalvo(document.getElementById("phone-mobile"), "Copiado!"); 
+            };
+        }
+
+        function ativarEdicaoInline() {
+            const camposEditaveis = [
+                { id: "nome-empresa", campo: "name" }, 
+                { id: "nome-contato", campo: "nomeContato" },
+                { id: "endereco-cliente", campo: "address" },
+                { id: "lead-description", campo: "description" },
+                { id: "lead-dealValue", campo: "dealValue", isMoney: true }
+            ];
+
+            camposEditaveis.forEach(item => {
+                const el = document.getElementById(item.id);
+                el.onblur = async (e) => {
+                    let valorFinal = e.target.innerText.trim();
+                    if(valorFinal.startsWith("Adicionar") || valorFinal.startsWith("Clique para")) return;
+                    
+                    if (item.isMoney) valorFinal = parseFloat(valorFinal.replace(/\D/g, "")) / 100;
+
+                    if(leadAtualId) {
+                        await updateDoc(doc(db, "leads", leadAtualId), { [item.campo]: valorFinal });
+                        mostrarAvisoSalvo(el);
+                    }
+                };
+                if(item.isMoney) el.oninput = (e) => { e.target.innerText = maskMoney(e.target.innerText); };
+            });
+
+            const inputsPhone = [
+                { id: "phone-fixed", campo: "phoneFixed" },
+                { id: "phone-mobile", campo: "phone" } 
+            ];
+
+            inputsPhone.forEach(item => {
+                const el = document.getElementById(item.id);
+                el.oninput = (e) => { e.target.value = maskPhone(e.target.value); };
+                el.onblur = async (e) => {
+                    const valorFinal = e.target.value.replace(/\D/g, ''); 
+                    if(leadAtualId) {
+                        await updateDoc(doc(db, "leads", leadAtualId), { [item.campo]: valorFinal });
+                        mostrarAvisoSalvo(el.parentNode);
+                    }
+                };
+            });
+        }
+
+        function ativarModuloOCR() {
+            const areaPhoto = document.getElementById("area-photo");
+            const fileInput = document.getElementById("input-photo-upload");
+            const loadingOcr = document.getElementById("ocr-loading");
+
+            areaPhoto.onclick = (e) => { if (!e.target.closest('#ocr-loading')) fileInput.click(); };
+            
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                processarImagemComOCR(file);
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    document.getElementById("lead-photo").src = ev.target.result;
+                    if(leadAtualId) await updateDoc(doc(db, "leads", leadAtualId), { photoUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+            };
+
+            areaPhoto.onpaste = (e) => {
+                const item = Array.from(e.clipboardData.items).find(x => x.type.indexOf("image") === 0);
+                if (!item) return;
+                processarImagemComOCR(item.getAsFile());
+            };
+
+            async function processarImagemComOCR(file) {
+                loadingOcr.classList.remove("hidden");
+                try {
+                    const result = await Tesseract.recognize(file, 'por');
+                    const text = result.data.text;
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+                    
+                    let newName = lines.length > 0 ? lines[0] : null; 
+                    let newPhone = null;
+                    const phoneMatch = text.match(/(?:\(?\d{2}\)?\s?)?(?:9?\d{4})[-\s]?(?:\d{4})/);
+                    if(phoneMatch) newPhone = phoneMatch[0].replace(/\D/g, '');
+                    
+                    if(leadAtualId) {
+                        const updates = {};
+                        if(newName) { updates.name = newName; updates.titulo = newName; }
+                        if(newPhone) updates.phone = newPhone;
+                        
+                        if(Object.keys(updates).length > 0) {
+                            await updateDoc(doc(db, "leads", leadAtualId), updates);
+                            alert("OCR Concluído: Nome/Telefone atualizados pelo print!");
+                        }
+                    }
+                } catch (err) { console.error(err); alert("Falha ao ler o texto da imagem.");
+                } finally { loadingOcr.classList.add("hidden"); }
+            }
+        }
+
+        function mostrarAvisoSalvo(elemento, msg = "Salvo!") {
+            elemento.classList.add('salvo-sucesso');
+            setTimeout(() => elemento.classList.remove('salvo-sucesso'), 600);
+            const aviso = document.getElementById('aviso-salvo');
+            aviso.innerText = msg;
+            aviso.classList.remove('opacity-0');
+            setTimeout(() => aviso.classList.add('opacity-0'), 1500);
         }
 
         document.addEventListener('DOMContentLoaded', init);
