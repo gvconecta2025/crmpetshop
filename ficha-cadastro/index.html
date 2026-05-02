@@ -72,6 +72,7 @@
     </div>
 
     <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
+        
         <aside class="w-[450px] bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative p-6">
             <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 transition-opacity z-50 shadow-xl">Salvo!</div>
             
@@ -149,34 +150,37 @@
         </aside>
 
         <main class="flex-1 bg-slate-50 flex flex-col p-6 overflow-y-auto no-scrollbar border-r border-slate-200">
-            <header class="mb-6"><h3 class="text-lg font-bold">Linha do Tempo</h3></header>
+            <header class="mb-6"><h3 class="text-lg font-bold text-slate-800">Linha do Tempo</h3></header>
+            
             <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8">
-                <textarea id="texto-anotacao" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none" rows="3" placeholder="Registre a última conversa..."></textarea>
+                <textarea id="texto-anotacao" class="w-full bg-slate-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none" rows="3" placeholder="O que foi conversado ou realizado hoje?"></textarea>
                 <div class="flex justify-end mt-3">
                     <button id="btn-salvar-nota" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition">Registrar Atividade</button>
                 </div>
             </div>
-            <div id="container-historico" class="relative border-l-2 border-slate-200 ml-4 space-y-6">
-                <p class="text-xs text-slate-400 pl-4 italic">Histórico será ativado no próximo módulo.</p>
-            </div>
+            
+            <div id="container-historico" class="relative border-l-2 border-slate-200 ml-4 space-y-6 pb-10">
+                </div>
         </main>
 
         <aside class="w-80 bg-white flex flex-col shrink-0 p-6">
-            <header class="mb-6"><h3 class="text-lg font-bold flex items-center gap-2"><i class="fa-regular fa-calendar-check text-blue-600"></i> Agendamentos</h3></header>
+            <header class="mb-6"><h3 class="text-lg font-bold flex items-center gap-2 text-slate-800"><i class="fa-regular fa-calendar-check text-blue-600"></i> Agendamentos</h3></header>
+            
             <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 shadow-inner">
-                <input type="text" placeholder="Tarefa (ex: Retornar)" class="w-full mb-3 text-sm p-2 rounded-lg border border-gray-300 focus:outline-none">
+                <input type="text" id="input-tarefa" placeholder="Tarefa (ex: Retornar a ligar)" class="w-full mb-3 text-sm p-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
                 <div class="flex gap-2 mb-3">
-                    <input type="date" class="w-full text-xs p-2 rounded-lg border border-gray-300">
-                    <input type="time" class="w-full text-xs p-2 rounded-lg border border-gray-300">
+                    <input type="date" id="input-data" class="w-full text-xs p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500">
+                    <input type="time" id="input-hora" class="w-full text-xs p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500">
                 </div>
-                <button class="w-full bg-blue-600 text-white text-sm font-black py-2.5 rounded-lg hover:bg-blue-700 transition shadow-md shadow-blue-100">Agendar Passo</button>
+                <button id="btn-agendar-tarefa" class="w-full bg-blue-600 text-white text-sm font-black py-2.5 rounded-lg hover:bg-blue-700 transition shadow-md shadow-blue-100">Agendar Passo</button>
             </div>
         </aside>
     </div>
 
     <script type="module">
+        // Importamos também a função arrayUnion para adicionar itens de forma segura na linha do tempo
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -269,6 +273,7 @@
                 if (!snap.exists()) return;
                 const d = snap.data();
                 
+                // === ATUALIZAÇÃO DOS DADOS DA FICHA ===
                 const nome = d.name || d.nome || d.titulo || "Sem Nome";
                 const fase = colunasDicionario[d.columnId] || d.columnId || "-";
                 const enderecoFull = d.address || d.endereco || "Adicionar endereço...";
@@ -308,6 +313,38 @@
                 document.getElementById("btn-maps").onclick = () => {
                     window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
                 };
+
+                // === RENDERIZAÇÃO DA LINHA DO TEMPO (HISTÓRICO) ===
+                const historico = d.history || [];
+                const containerHistorico = document.getElementById("container-historico");
+                
+                if(historico.length === 0) {
+                    containerHistorico.innerHTML = `<p class="text-xs text-slate-400 pl-4 italic">Nenhum histórico registrado ainda. Que tal fazer uma ligação?</p>`;
+                } else {
+                    // Ordena do mais recente para o mais antigo
+                    const historicoOrdenado = [...historico].sort((a, b) => b.createdAt - a.createdAt);
+                    
+                    containerHistorico.innerHTML = historicoOrdenado.map(h => {
+                        const dataObj = new Date(h.createdAt);
+                        const dataFormatada = dataObj.toLocaleDateString('pt-BR') + ' às ' + dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        
+                        // Inteligência Visual: Se o texto contém "📅", pintamos o ponto de amarelo/dourado!
+                        const isAgendamento = h.text.includes("📅");
+                        const corPonto = isAgendamento ? "bg-amber-400 border-amber-100" : "bg-blue-500 border-slate-50";
+                        
+                        return `
+                        <div class="relative pl-6">
+                            <div class="absolute -left-2.5 top-1 w-5 h-5 rounded-full ${corPonto} border-4 shadow-sm z-10"></div>
+                            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm transition hover:shadow-md">
+                                <p class="text-sm text-gray-700 whitespace-pre-wrap">${h.text}</p>
+                                <span class="text-[10px] text-gray-400 font-bold mt-2 block flex items-center gap-1">
+                                    <i class="fa-regular fa-clock"></i> ${dataFormatada}
+                                </span>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                }
             });
 
             if (!window.eventosCarregados) {
@@ -317,6 +354,57 @@
         }
 
         function ativarEventos() {
+            // === SALVAR ATIVIDADE (HISTÓRICO NORMAL) ===
+            document.getElementById("btn-salvar-nota").onclick = async () => {
+                const txtAnotacao = document.getElementById("texto-anotacao");
+                const texto = txtAnotacao.value.trim();
+                
+                if (!texto || !leadAtualId) return;
+
+                try {
+                    // arrayUnion empurra o item pro banco sem quebrar o que já existe lá
+                    await updateDoc(doc(db, "leads", leadAtualId), {
+                        history: arrayUnion({ text: texto, createdAt: Date.now() })
+                    });
+                    txtAnotacao.value = ""; // Limpa a caixa
+                    mostrarAvisoSalvo(document.getElementById("btn-salvar-nota"), "Nota Salva!");
+                } catch(e) { console.error(e); alert("Erro ao salvar anotação."); }
+            };
+
+            // === SALVAR AGENDAMENTO (TAREFA) ===
+            document.getElementById("btn-agendar-tarefa").onclick = async () => {
+                const inputTarefa = document.getElementById("input-tarefa");
+                const inputData = document.getElementById("input-data");
+                const inputHora = document.getElementById("input-hora");
+                
+                const tarefa = inputTarefa.value.trim();
+                const data = inputData.value;
+                const hora = inputHora.value;
+
+                if (!tarefa || !leadAtualId) {
+                    alert("Por favor, descreva qual é a tarefa (ex: Ligar de volta).");
+                    return;
+                }
+
+                // Cria o texto formatado para aparecer lindo no histórico
+                let textoFormatado = `📅 Agendado: ${tarefa}`;
+                if (data) {
+                    const dataBr = data.split('-').reverse().join('/');
+                    textoFormatado += ` para o dia ${dataBr}`;
+                    if (hora) textoFormatado += ` às ${hora}`;
+                }
+
+                try {
+                    await updateDoc(doc(db, "leads", leadAtualId), {
+                        history: arrayUnion({ text: textoFormatado, createdAt: Date.now() })
+                    });
+                    inputTarefa.value = ""; inputData.value = ""; inputHora.value = "";
+                    mostrarAvisoSalvo(document.getElementById("btn-agendar-tarefa"), "Agendado!");
+                } catch(e) { console.error(e); alert("Erro ao agendar passo."); }
+            };
+
+
+            // Demais eventos fixos de edição e cópia...
             document.getElementById("btn-copy-fixed").onclick = () => { navigator.clipboard.writeText(document.getElementById("phone-fixed").value.replace(/\D/g,'')); mostrarAvisoSalvo(document.getElementById("phone-fixed").parentNode, "Copiado!"); };
             document.getElementById("btn-copy-mobile").onclick = () => { navigator.clipboard.writeText(document.getElementById("phone-mobile").value.replace(/\D/g,'')); mostrarAvisoSalvo(document.getElementById("phone-mobile").parentNode, "Copiado!"); };
 
@@ -325,7 +413,6 @@
                 "endereco-cliente": "address", "lead-description": "description"
             };
             
-            // MOTOR BLINDADO CONTRA GHOST BLUR
             Object.keys(idToField).forEach(id => {
                 const el = document.getElementById(id);
                 el.addEventListener('focus', (e) => { el.dataset.oldValue = e.target.innerText.trim(); });
@@ -333,11 +420,11 @@
                 el.onblur = async (e) => {
                     let val = e.target.innerText.trim();
                     if(val.includes("Adicionar") || val.includes("Clique para")) return;
-                    if(val === el.dataset.oldValue) return; // Se não mudou nada, NÃO SALVA (Protege o dado!)
+                    if(val === el.dataset.oldValue) return; 
                     
                     if(leadAtualId) {
                         const updates = { [idToField[id]]: val };
-                        if (id === "nome-empresa") updates.titulo = val; // Mantém retrocompatibilidade
+                        if (id === "nome-empresa") updates.titulo = val; 
                         await updateDoc(doc(db, "leads", leadAtualId), updates);
                         mostrarAvisoSalvo(el);
                     }
@@ -349,7 +436,7 @@
             elValor.addEventListener('focus', (e) => { elValor.dataset.oldValue = e.target.innerText.trim(); });
             elValor.onblur = async (e) => {
                 let valTela = e.target.innerText.trim();
-                if (valTela === elValor.dataset.oldValue) return; // Se não mudou, protege
+                if (valTela === elValor.dataset.oldValue) return; 
                 
                 let texto = valTela.replace(/\D/g, "");
                 let valorParaOBanco = parseFloat(texto) / 100 || 0;
@@ -367,15 +454,13 @@
                 el.addEventListener('focus', (e) => { el.dataset.oldValue = e.target.value; });
                 el.oninput = e => e.target.value = maskPhone(e.target.value);
                 el.onblur = async e => {
-                    if (e.target.value === el.dataset.oldValue) return; // Se não mudou, protege
+                    if (e.target.value === el.dataset.oldValue) return; 
                     let val = e.target.value.replace(/\D/g, '');
                     if(leadAtualId) { await updateDoc(doc(db, "leads", leadAtualId), { [campoBanco]: val }); mostrarAvisoSalvo(el.parentNode); }
                 };
             });
 
-            // =====================================
-            // MODAL DE IMAGEM & OCR EDUCADO
-            // =====================================
+            // Lógica do Modal OCR
             const areaPhoto = document.getElementById("area-photo");
             const fileInput = document.getElementById("input-photo-upload");
             const modalImagem = document.getElementById("modal-imagem");
@@ -451,7 +536,6 @@
                     if(phoneMatch) newPhone = phoneMatch[0].replace(/\D/g, '');
                     
                     if(leadAtualId) {
-                        // Puxa os dados reais atuais para perguntar antes de sobrescrever
                         const docAt = await getDoc(doc(db, "leads", leadAtualId));
                         const dAt = docAt.data();
                         const nomeAt = dAt.name || dAt.nome || dAt.titulo || "";
