@@ -15,6 +15,20 @@
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800 relative">
 
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900/95 z-[200] flex flex-col items-center justify-center px-4 transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h1 class="text-2xl font-black text-slate-800 mb-2">Ficha Pro PetLojas</h1>
+            <p class="text-slate-500 text-sm mb-6">Acesso restrito a administradores.</p>
+            <button id="btn-login-google" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
+                <i class="fa-brands fa-google text-lg"></i> Entrar com o Google
+            </button>
+            <p id="loginError" class="hidden mt-4 text-sm text-red-500 font-bold bg-red-50 p-3 rounded-lg border border-red-200"></p>
+        </div>
+    </div>
+
     <div id="modal-imagem" class="fixed inset-0 bg-slate-900/60 z-[100] hidden items-center justify-center backdrop-blur-sm transition-all">
         <div class="bg-white rounded-2xl p-6 shadow-2xl w-[400px] flex flex-col items-center relative">
             <button id="btn-fechar-modal" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center">
@@ -43,6 +57,7 @@
         <a href="../index.html" class="hover:text-white transition" title="Voltar ao Kanban"><i class="fa-solid fa-table-columns text-xl"></i></a>
         <a href="index.html" class="text-white bg-slate-800 p-3 rounded-lg transition" title="Diretório"><i class="fa-solid fa-address-card text-xl"></i></a>
         <div class="flex-grow"></div>
+        <button id="btn-logout" class="hover:text-red-500 transition mb-4" title="Sair do Sistema"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
     </nav>
 
     <div id="view-lista" class="hidden flex-1 flex-col bg-slate-50 overflow-hidden">
@@ -179,6 +194,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // NOVO: Importando a autenticação
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -191,9 +208,47 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app); // Iniciando a chave da porta
+        const provider = new GoogleAuthProvider();
+
+        const ADMIN_EMAILS = ["professoragiselle.edu2@gmail.com", "gvconecta2025@gmail.com"];
+
         let colunasDicionario = {};
         let todosOsLeads = [];
         let leadAtualId = null;
+
+        // VERIFICANDO A FECHADURA DE SEGURANÇA
+        onAuthStateChanged(auth, (user) => {
+            const loginScreen = document.getElementById('loginScreen');
+            if (user) {
+                if (ADMIN_EMAILS.includes(user.email)) {
+                    loginScreen.classList.add('hidden'); // Libera a entrada
+                    init(); // Só agora dispara o seu código original!
+                } else {
+                    const errEl = document.getElementById('loginError');
+                    errEl.innerHTML = `⚠️ Acesso Negado.<br>O e-mail <b>${user.email}</b> não tem permissão.`;
+                    errEl.classList.remove('hidden');
+                    signOut(auth);
+                }
+            } else {
+                loginScreen.classList.remove('hidden'); // Exige crachá
+                document.getElementById('view-lista').classList.add('hidden');
+                document.getElementById('view-detalhes').classList.add('hidden');
+            }
+        });
+
+        // Botões de Login e Logout
+        document.getElementById('btn-login-google').onclick = () => {
+            signInWithPopup(auth, provider).catch(error => {
+                const errEl = document.getElementById('loginError');
+                errEl.innerText = "Erro ao fazer login: " + error.message;
+                errEl.classList.remove('hidden');
+            });
+        };
+
+        document.getElementById('btn-logout').onclick = () => {
+            if(confirm("Deseja sair do sistema?")) signOut(auth);
+        };
 
         const formatarMoedaParaExibicao = (valorDb) => parseFloat(valorDb || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -216,6 +271,7 @@
             return "Governador Valadares";
         }
 
+        // A SUA INICIALIZAÇÃO ORIGINAL (AGORA PROTEGIDA PELA AUTENTICAÇÃO)
         async function init() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
@@ -311,7 +367,6 @@
                     window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
                 };
 
-                // === RENDERIZAÇÃO DA LINHA DO TEMPO (HISTÓRICO COM DIA DA SEMANA E DIAS ATRÁS) ===
                 const historico = d.history || [];
                 const containerHistorico = document.getElementById("container-historico");
                 
@@ -323,15 +378,12 @@
                     containerHistorico.innerHTML = historicoOrdenado.map(h => {
                         const dataObj = new Date(h.createdAt);
                         
-                        // Formatação base (Data e Hora)
                         const dataNormal = dataObj.toLocaleDateString('pt-BR');
                         const horaNormal = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
                         
-                        // Dia da Semana (Ex: Segunda-feira)
                         let diaSemana = dataObj.toLocaleDateString('pt-BR', { weekday: 'long' });
                         diaSemana = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
                         
-                        // Cálculo de dias atrás
                         const hoje = new Date();
                         hoje.setHours(0, 0, 0, 0);
                         const dataRegistro = new Date(h.createdAt);
@@ -344,7 +396,7 @@
                         else if (diffDias < 0) textoRelativo = "No futuro"; 
                         else textoRelativo = `Há ${diffDias} dias`;
                         
-                        const stringDataFinal = `${diaSemana}, ${dataNormal} às ${horaNormal} &bull; <span class="text-blue-500">${textoRelativo}</span>`;
+                        const stringDataFinal = `${diaSemana}, ${dataNormal} às ${horaNormal} • <span class="text-blue-500">${textoRelativo}</span>`;
                         
                         const isAgendamento = h.text.includes("📅");
                         const corPonto = isAgendamento ? "bg-amber-400 border-amber-100" : "bg-blue-500 border-slate-50";
@@ -371,7 +423,6 @@
         }
 
         function ativarEventos() {
-            // SALVAR ATIVIDADE (HISTÓRICO NORMAL)
             document.getElementById("btn-salvar-nota").onclick = async () => {
                 const txtAnotacao = document.getElementById("texto-anotacao");
                 const texto = txtAnotacao.value.trim();
@@ -387,7 +438,6 @@
                 } catch(e) { console.error(e); alert("Erro ao salvar anotação."); }
             };
 
-            // SALVAR AGENDAMENTO (TAREFA)
             document.getElementById("btn-agendar-tarefa").onclick = async () => {
                 const inputTarefa = document.getElementById("input-tarefa");
                 const inputData = document.getElementById("input-data");
@@ -596,8 +646,6 @@
             aviso.classList.remove('opacity-0');
             setTimeout(() => aviso.classList.add('opacity-0'), 1500);
         }
-
-        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
