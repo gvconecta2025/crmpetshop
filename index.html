@@ -28,12 +28,18 @@
 
     <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center px-4 transition-opacity duration-300">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">CRM PetLojas</h1>
             <p class="text-slate-500 text-sm mb-6">Acesso restrito a administradores.</p>
-            <button onclick="loginComGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
+            
+            <div id="loadingAuth" class="flex flex-col items-center justify-center mb-2">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                <p class="text-sm font-bold text-slate-500">A verificar sessão unificada...</p>
+            </div>
+
+            <button id="btn-login-google" onclick="loginComGoogle()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition items-center justify-center gap-3 shadow-md">
                 <i class="fa-brands fa-google text-lg"></i> Entrar com o Google
             </button>
             <p id="loginError" class="hidden mt-4 text-sm text-red-500 font-bold bg-red-50 p-3 rounded-lg border border-red-200"></p>
@@ -79,7 +85,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                         <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center w-full md:w-auto justify-between md:justify-start">
                             <span>Módulo CRM</span>
-                            <span class="text-[10px] font-bold bg-slate-800 text-indigo-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0">V8.0</span>
+                            <span class="text-[10px] font-bold bg-slate-800 text-indigo-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0">V8.1</span>
                         </h1>
                         
                         <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -172,10 +178,15 @@
         let colListener = null;
         let leadsListener = null;
 
+        // Forçar persistência LOCAL para não perder a sessão ao fechar a aba
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
+
         auth.onAuthStateChanged((user) => {
             const loginScreen = document.getElementById('loginScreen');
             const mainApp = document.getElementById('mainApp');
             const loginError = document.getElementById('loginError');
+            const loadingAuth = document.getElementById('loadingAuth');
+            const btnLogin = document.getElementById('btn-login-google');
 
             if (user) {
                 if (ADMIN_EMAILS.includes(user.email)) {
@@ -185,6 +196,9 @@
                     mainApp.classList.add('flex');
                     iniciarDadosCRM(); 
                 } else {
+                    loadingAuth.classList.add('hidden');
+                    btnLogin.classList.remove('hidden');
+                    btnLogin.classList.add('flex');
                     loginError.innerHTML = `⚠️ Acesso Negado.<br>O e-mail <b>${user.email}</b> não tem permissão de administrador.`;
                     loginError.classList.remove('hidden');
                     auth.signOut();
@@ -193,6 +207,9 @@
                 loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
                 mainApp.classList.add('hidden');
                 mainApp.classList.remove('flex');
+                loadingAuth.classList.add('hidden');
+                btnLogin.classList.remove('hidden');
+                btnLogin.classList.add('flex');
                 pararDadosCRM(); 
             }
         });
@@ -203,7 +220,7 @@
         let columnsData = []; let leadsData = []; let draggedLeadId = null; let draggedColId = null; let expandedLeads = new Set();
         let currentSearchTerm = ""; let searchMatches = []; let currentSearchIndex = -1; let showOnlyDuplicates = false;
 
-        const columnColors = [ { bg: 'bg-blue-500', text: 'text-blue-600', dot: 'text-blue-500', lightBg: 'bg-blue-50' }, { bg: 'bg-red-500', text: 'text-red-600', dot: 'text-red-500', lightBg: 'bg-red-50' }, { bg: 'bg-slate-400', text: 'text-slate-600', dot: 'text-slate-400', lightBg: 'bg-slate-100' }, { bg: 'bg-green-500', text: 'text-green-600', dot: 'text-green-500', lightBg: 'bg-green-50' }, { bg: 'bg-purple-500', text: 'text-purple-600', dot: 'text-purple-500', lightBg: 'bg-purple-50' } ];
+        const columnColors = [ { bg: 'bg-indigo-500', text: 'text-indigo-600', dot: 'text-indigo-500', lightBg: 'bg-indigo-50' }, { bg: 'bg-rose-500', text: 'text-rose-600', dot: 'text-rose-500', lightBg: 'bg-rose-50' }, { bg: 'bg-slate-400', text: 'text-slate-600', dot: 'text-slate-400', lightBg: 'bg-slate-100' }, { bg: 'bg-emerald-500', text: 'text-emerald-600', dot: 'text-emerald-500', lightBg: 'bg-emerald-50' }, { bg: 'bg-purple-500', text: 'text-purple-600', dot: 'text-purple-500', lightBg: 'bg-purple-50' } ];
         const boardEl = document.getElementById('kanbanBoard');
 
         function iniciarDadosCRM() {
@@ -231,7 +248,7 @@
             if (totalLeads === 0) return;
             columnsData.forEach((col, index) => {
                 const colLeads = leadsData.filter(l => l.columnId === col.id); const count = colLeads.length; const colTotalValue = colLeads.reduce((acc, l) => acc + (parseFloat(l.dealValue) || 0), 0);
-                const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0; const colorTheme = columnColors[index % columnColors.length]; const isFechado = col.title.trim().toLowerCase() === 'fechado'; const valueColor = isFechado ? 'text-blue-500' : 'text-green-600';
+                const percentage = totalLeads > 0 ? Math.round((count / totalLeads) * 100) : 0; const colorTheme = columnColors[index % columnColors.length]; const isFechado = col.title.trim().toLowerCase() === 'fechado'; const valueColor = isFechado ? 'text-indigo-500' : 'text-emerald-600';
                 metricsContainer.innerHTML += `<div class="flex flex-col bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-sm shrink-0 min-w-[85px] md:min-w-[110px]"><div class="flex items-center gap-1.5 mb-1"><span class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${colorTheme.bg}"></span><span class="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase truncate max-w-[65px] md:max-w-[85px]">${col.title}</span></div><div class="flex items-baseline justify-between gap-2"><span class="text-sm md:text-lg font-black text-slate-800 leading-none">${count}</span><span class="text-[7px] md:text-[8px] font-bold ${colorTheme.text} ${colorTheme.lightBg} px-1 rounded-sm">${percentage}%</span></div><div class="mt-1 pt-1 border-t border-slate-100"><span class="text-[8px] md:text-[10px] font-black ${valueColor} truncate block">${formatMoney(colTotalValue)}</span></div></div>`;
                 if (count > 0) progressContainer.innerHTML += `<div class="${colorTheme.bg} h-full transition-all duration-500" style="width: ${percentage}%"></div>`;
             });
@@ -250,7 +267,7 @@
                 const colEl = document.createElement('div'); colEl.className = `kanban-col ${columnWidthClass} bg-slate-200/60 rounded-2xl flex flex-col border border-slate-200 h-full max-h-full transition-colors`; colEl.dataset.colId = col.id;
                 colEl.draggable = true; colEl.addEventListener('dragstart', function(e) { if (e.target === colEl) { draggedColId = this.dataset.colId; e.dataTransfer.effectAllowed = 'move'; setTimeout(() => this.classList.add('col-ghost'), 0); }}); colEl.addEventListener('dragend', function(e) { if (e.target === colEl) { this.classList.remove('col-ghost'); draggedColId = null; }}); colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.classList.add('bg-slate-300/40'); }); colEl.addEventListener('dragleave', () => colEl.classList.remove('bg-slate-300/40')); colEl.addEventListener('drop', handleDrop);
                 let colLeads = leadsData.filter(l => l.columnId === col.id); if(showOnlyDuplicates) colLeads = colLeads.filter(l => l.isDuplicate);
-                const colorTheme = columnColors[index % columnColors.length]; const isFechado = col.title.trim().toLowerCase() === 'fechado'; const colTotalValue = colLeads.reduce((acc, l) => acc + (parseFloat(l.dealValue) || 0), 0); const colSubtitle = isFechado ? 'Faturamento Atual' : 'Faturamento Possível'; const colSubtitleColor = isFechado ? 'text-blue-500' : 'text-green-600';
+                const colorTheme = columnColors[index % columnColors.length]; const isFechado = col.title.trim().toLowerCase() === 'fechado'; const colTotalValue = colLeads.reduce((acc, l) => acc + (parseFloat(l.dealValue) || 0), 0); const colSubtitle = isFechado ? 'Faturamento Atual' : 'Faturamento Possível'; const colSubtitleColor = isFechado ? 'text-indigo-500' : 'text-emerald-600';
                 colEl.innerHTML = `<div class="p-3 md:p-4 pb-2 border-b border-slate-200/50 shrink-0"><div class="flex justify-between items-center mb-2 group cursor-grab"><i class="fa-solid fa-grip-vertical text-slate-300 mr-2 text-xs hidden md:block"></i><input type="text" class="font-bold text-slate-700 bg-transparent border-none focus:ring-2 focus:ring-indigo-400 rounded px-1 w-full outline-none transition-colors cursor-text truncate text-sm md:text-base" value="${col.title}" onblur="updateColumn('${col.id}', this.value)" onclick="event.stopPropagation()"><button onclick="deleteColumn('${col.id}')" class="text-slate-300 hover:text-red-500 transition px-1 ml-auto" title="Excluir Coluna"><i class="fa-solid fa-trash-can text-[10px]"></i></button><button onclick="scrollToTop('${col.id}')" class="text-slate-300 hover:text-indigo-500 transition px-1 ml-1" title="Subir ao topo"><i class="fa-solid fa-arrow-up text-[10px]"></i></button><span class="bg-white shadow-sm ${colorTheme.text} text-xs py-0.5 px-2 rounded-full font-bold ml-1 border border-slate-200 shrink-0">${colLeads.length}</span></div><div class="text-center bg-white/50 rounded-lg p-1.5 md:p-2 border border-white/60 shadow-sm mt-1"><p class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-wider">${colSubtitle}</p><p class="text-xs md:text-sm font-black ${colSubtitleColor}">${formatMoney(colTotalValue)}</p></div></div>`;
                 const container = document.createElement('div'); container.className = 'flex-1 overflow-y-auto custom-scrollbar space-y-3 p-2 md:p-3 kanban-scroll-container relative min-h-0'; container.dataset.colId = col.id;
                 colLeads.forEach(lead => container.appendChild(createCard(lead, col.title))); if(colLeads.length === 0) container.innerHTML = `<div class="h-16 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-xs">Vazio</div>`;
@@ -262,7 +279,7 @@
         }
 
         function createCard(lead, columnTitle) {
-            const isExpanded = expandedLeads.has(lead.id); const isFechado = columnTitle.trim().toLowerCase() === 'fechado'; const valueColorClass = isFechado ? 'text-blue-600' : 'text-green-600'; const valueBgClass = isFechado ? 'bg-blue-50 border-blue-100 focus-within:border-blue-300' : 'bg-green-50 border-green-100 focus-within:border-green-300';
+            const isExpanded = expandedLeads.has(lead.id); const isFechado = columnTitle.trim().toLowerCase() === 'fechado'; const valueColorClass = isFechado ? 'text-indigo-600' : 'text-emerald-600'; const valueBgClass = isFechado ? 'bg-indigo-50 border-indigo-100 focus-within:border-indigo-300' : 'bg-emerald-50 border-emerald-100 focus-within:border-emerald-300';
             const card = document.createElement('div'); card.className = `bg-white rounded-xl p-3 md:p-4 shadow-sm border ${isExpanded ? 'border-indigo-400 ring-1 ring-indigo-100' : 'border-slate-200'} cursor-grab hover:shadow-md transition-all group relative ${lead.isDuplicate ? 'ring-2 ring-red-300' : ''}`; card.draggable = true; card.dataset.leadId = lead.id;
             card.addEventListener('dragstart', function(e) { e.stopPropagation(); draggedLeadId = this.dataset.leadId; setTimeout(() => this.classList.add('card-ghost'), 0); }); card.addEventListener('dragend', function(e) { e.stopPropagation(); this.classList.remove('card-ghost'); draggedLeadId = null; });
             const formatDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '-'; const formatTime = (ts) => ts ? new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
@@ -290,7 +307,7 @@
                 </div>
                 <div class="mt-3 md:mt-4 flex gap-2">
                     <a href="https://crmpetshop.vercel.app/ficha-cadastro/index.html?id=${lead.id}" target="_blank" rel="noopener noreferrer" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-[10px] md:text-xs transition-colors shadow-sm text-center"><i class="fa-regular fa-address-card"></i> Ficha</a>
-                    <button class="flex-1 ${lead.phone ? 'bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-500' : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'} py-2 rounded-lg font-bold flex items-center justify-center gap-2 whatsapp-btn text-[10px] md:text-xs transition-colors shadow-sm"><i class="fa-brands fa-whatsapp text-sm"></i> Falar</button>
+                    <button class="flex-1 ${lead.phone ? 'bg-[#25D366] hover:bg-[#1da851] text-white border border-[#25D366]' : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'} py-2 rounded-lg font-bold flex items-center justify-center gap-2 whatsapp-btn text-[10px] md:text-xs transition-colors shadow-sm"><i class="fa-brands fa-whatsapp text-sm"></i> Falar</button>
                 </div>
             `;
 
