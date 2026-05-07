@@ -6,11 +6,9 @@
     <title>Disparador WhatsApp - CRM Pet Shops</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
@@ -22,119 +20,140 @@
         @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
-<body class="flex flex-col h-screen bg-slate-50 lg:overflow-hidden relative">
+<body class="flex flex-col h-screen bg-slate-50 relative lg:overflow-hidden">
 
-    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center px-4 transition-opacity duration-300">
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900/95 z-[200] flex flex-col items-center justify-center px-4 transition-opacity duration-300">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
             <div class="w-16 h-16 bg-[#25D366] bg-opacity-20 text-[#25D366] rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 <i class="fa-solid fa-paper-plane"></i>
             </div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">Disparador PetLojas</h1>
             <p class="text-slate-500 text-sm mb-6">Acesso restrito a administradores.</p>
-            
-            <button onclick="loginComGoogle()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
+            <button onclick="loginComGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
                 <i class="fa-brands fa-google text-lg"></i> Entrar com o Google
             </button>
-            
             <p id="loginError" class="hidden mt-4 text-sm text-red-500 font-bold bg-red-50 p-3 rounded-lg border border-red-200"></p>
         </div>
     </div>
 
-    <div id="mainApp" class="hidden flex-col h-full w-full">
-        <div class="p-3 md:p-6 pb-0 shrink-0">
-            <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-bold text-slate-800 text-center md:text-left">
-                    <i class="fa-solid fa-paper-plane mr-2 text-[#25D366]"></i>Disparador WhatsApp 
-                    <span class="block md:inline mt-1 md:mt-0 text-[10px] md:text-xs font-bold bg-[#25D366] bg-opacity-10 text-[#25D366] px-2 py-1 rounded md:ml-2">Seguro V5.0</span>
-                </h1>
+    <div id="mainApp" class="hidden flex-row h-full w-full">
+        
+        <nav class="group w-[60px] hover:w-64 bg-slate-900 flex flex-col py-6 transition-all duration-300 ease-in-out shrink-0 z-[100] absolute md:relative h-full overflow-hidden shadow-2xl md:shadow-none border-r border-slate-800">
+            <div class="flex items-center px-4 mb-8 whitespace-nowrap overflow-hidden">
+                <i class="fa-solid fa-paw text-emerald-400 text-2xl min-w-[28px] text-center"></i>
+                <span class="text-white font-black text-lg ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">PetLojas</span>
+            </div>
+            
+            <div class="flex flex-col space-y-3 px-2">
+                <a href="https://crmpetshop.vercel.app/index.html" class="flex items-center px-3 py-3 rounded-lg transition-colors whitespace-nowrap overflow-hidden text-slate-400 hover:text-white hover:bg-slate-800" title="Kanban CRM">
+                    <i class="fa-solid fa-table-columns text-xl min-w-[24px] text-center"></i>
+                    <span class="ml-3 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">Kanban CRM</span>
+                </a>
+                <a href="https://crmpetshop.vercel.app/ficha-cadastro/index.html" class="flex items-center px-3 py-3 rounded-lg transition-colors whitespace-nowrap overflow-hidden text-slate-400 hover:text-white hover:bg-slate-800" title="Painel de Fichas">
+                    <i class="fa-solid fa-address-book text-xl min-w-[24px] text-center"></i>
+                    <span class="ml-3 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">Painel de Fichas</span>
+                </a>
+                <a href="https://crmpetshop.vercel.app/disparadorcrm/index.html" class="flex items-center px-3 py-3 rounded-lg whitespace-nowrap overflow-hidden bg-indigo-600 text-white shadow-md" title="Disparador">
+                    <i class="fa-solid fa-paper-plane text-xl min-w-[24px] text-center"></i>
+                    <span class="ml-3 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">Disparador</span>
+                </a>
+            </div>
+            
+            <div class="flex-grow"></div>
+            
+            <div class="px-2">
+                <button onclick="fazerLogout()" class="w-full flex items-center px-3 py-3 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors whitespace-nowrap overflow-hidden" title="Sair do Sistema">
+                    <i class="fa-solid fa-right-from-bracket text-xl min-w-[24px] text-center"></i>
+                    <span class="ml-3 font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">Sair (Logout)</span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="flex-1 flex flex-col h-full overflow-hidden pl-[60px] md:pl-0">
+            <div class="p-3 md:p-6 pb-0 shrink-0">
+                <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-800 text-center md:text-left">
+                        <i class="fa-solid fa-paper-plane mr-2 text-[#25D366]"></i>Disparador WhatsApp 
+                    </h1>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto lg:overflow-y-hidden custom-scrollbar flex flex-col lg:flex-row gap-4 md:gap-6 p-3 md:p-6 pt-3 md:pt-4">
                 
-                <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
-                    <a href="../" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm border border-slate-200">
-                        <i class="fa-solid fa-arrow-left"></i> Voltar ao Kanban
-                    </a>
-                    <button onclick="fazerLogout()" class="w-full sm:w-auto bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm">
-                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 w-full lg:w-1/2 flex flex-col lg:h-full lg:overflow-y-auto custom-scrollbar shrink-0 lg:shrink">
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 md:p-4 mb-4">
+                        <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-2">
+                            <i class="fa-solid fa-shield-halved mr-1"></i> Quem está a enviar?
+                        </label>
+                        <input type="text" id="numeroRemetente" value="(33) 99819-2213" placeholder="Ex: (33) 99999-9999" class="w-full border border-amber-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-bold" required>
+                    </div>
+
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 md:p-4 mb-4 flex flex-col gap-2">
+                        <label class="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Importar do CRM</label>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <select id="colunaSelect" class="flex-1 border border-indigo-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700">
+                                <option value="">A carregar colunas...</option>
+                            </select>
+                            <button onclick="importarDoCRM(event)" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
+                                Puxar Leads
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-4">
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-2 flex justify-between">
+                                <span>Lista Destino</span>
+                                <span class="text-emerald-600 font-normal"><i class="fa-solid fa-filter"></i> Anti-Repetição ON</span>
+                            </label>
+                            <textarea id="listaNumeros" rows="4" placeholder="Os números do CRM aparecerão aqui..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm custom-scrollbar resize-none"></textarea>
+                        </div>
+
+                        <div class="flex-1 flex flex-col">
+                            <label class="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-2">Mensagem Padrão</label>
+                            <textarea id="mensagemPadrao" rows="4" placeholder="Olá! Vi o seu Pet Shop..." class="w-full flex-1 min-h-[100px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm custom-scrollbar resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="prepararFila()" class="mt-4 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 md:py-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md shrink-0">
+                        <i class="fa-solid fa-list-check"></i> Preparar Disparos
                     </button>
                 </div>
-            </div>
-        </div>
 
-        <div class="flex-1 overflow-y-auto lg:overflow-y-hidden custom-scrollbar flex flex-col lg:flex-row gap-4 md:gap-6 p-3 md:p-6 pt-3 md:pt-4">
-            
-            <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 w-full lg:w-1/2 flex flex-col lg:h-full lg:overflow-y-auto custom-scrollbar shrink-0 lg:shrink">
-                
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 md:p-4 mb-4">
-                    <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-2">
-                        <i class="fa-solid fa-shield-halved mr-1"></i> Quem está a enviar?
-                    </label>
-                    <input type="text" id="numeroRemetente" value="(33) 99819-2213" placeholder="Ex: (33) 99999-9999" class="w-full border border-amber-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-700 font-bold" required>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 md:p-4 mb-4 flex flex-col gap-2">
-                    <label class="block text-[10px] font-bold text-blue-800 uppercase tracking-wide"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Importar do CRM</label>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <select id="colunaSelect" class="flex-1 border border-blue-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700">
-                            <option value="">A carregar colunas...</option>
-                        </select>
-                        <button onclick="importarDoCRM(event)" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm whitespace-nowrap">
-                            Puxar Leads
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex-1 flex flex-col gap-4">
-                    <div class="flex flex-col">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-2 flex justify-between">
-                            <span>Lista Destino</span>
-                            <span class="text-green-600 font-normal"><i class="fa-solid fa-filter"></i> Anti-Repetição ON</span>
-                        </label>
-                        <textarea id="listaNumeros" rows="4" placeholder="Os números do CRM aparecerão aqui..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar resize-none"></textarea>
+                <div id="actionSection" class="bg-slate-100 lg:bg-slate-50 p-4 md:p-6 rounded-2xl shadow-inner border border-slate-200 w-full lg:w-1/2 flex flex-col relative opacity-50 pointer-events-none transition-opacity duration-300 lg:h-full shrink-0 lg:shrink mb-8 lg:mb-0">
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base md:text-lg font-bold text-slate-800"><i class="fa-solid fa-layer-group mr-2 text-slate-400"></i>Fila de Envio</h2>
+                        <div class="flex items-center gap-3">
+                            <span id="contadorFila" class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-200">0 / 0</span>
+                            <button onclick="resetarTudo()" class="text-slate-400 hover:text-red-500 transition-colors bg-white w-8 h-8 rounded-full shadow-sm border border-slate-200 flex items-center justify-center" title="Limpar e Recomeçar">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="flex-1 flex flex-col">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-2">Mensagem Padrão</label>
-                        <textarea id="mensagemPadrao" rows="4" placeholder="Olá! Vi o seu Pet Shop..." class="w-full flex-1 min-h-[100px] bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm custom-scrollbar resize-none"></textarea>
+                    <div id="alertaRemetente" class="hidden bg-amber-100 text-amber-800 border border-amber-300 p-3 rounded-lg text-xs md:text-sm mb-4 font-bold text-center alerta-piscar">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> VERIFIQUE: O seu WhatsApp logado deve ser o <span id="displayRemetente" class="underline"></span>
                     </div>
-                </div>
 
-                <button onclick="prepararFila()" class="mt-4 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 md:py-4 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-md shrink-0">
-                    <i class="fa-solid fa-list-check"></i> Preparar Disparos
-                </button>
-            </div>
-
-            <div id="actionSection" class="bg-slate-100 lg:bg-slate-50 p-4 md:p-6 rounded-2xl shadow-inner border border-slate-200 w-full lg:w-1/2 flex flex-col relative opacity-50 pointer-events-none transition-opacity duration-300 lg:h-full shrink-0 lg:shrink mb-8 lg:mb-0">
-                
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-base md:text-lg font-bold text-slate-800"><i class="fa-solid fa-layer-group mr-2 text-slate-400"></i>Fila de Envio</h2>
-                    <div class="flex items-center gap-3">
-                        <span id="contadorFila" class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">0 / 0</span>
-                        <button onclick="resetarTudo()" class="text-slate-400 hover:text-red-500 transition-colors bg-white w-8 h-8 rounded-full shadow-sm border border-slate-200 flex items-center justify-center" title="Limpar e Recomeçar">
-                            <i class="fa-solid fa-rotate-right"></i>
-                        </button>
+                    <div id="listaVisual" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-sm min-h-[250px] lg:min-h-0">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
+                            <i class="fa-solid fa-inbox text-3xl mb-2 opacity-30"></i>
+                            <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
+                        </div>
                     </div>
-                </div>
 
-                <div id="alertaRemetente" class="hidden bg-amber-100 text-amber-800 border border-amber-300 p-3 rounded-lg text-xs md:text-sm mb-4 font-bold text-center alerta-piscar">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> VERIFIQUE: O seu WhatsApp logado deve ser o <span id="displayRemetente" class="underline"></span>
+                    <button id="btnDisparar" onclick="dispararProximo()" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200/50 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shrink-0">
+                        <span class="flex items-center gap-2 text-base md:text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
+                        <span id="textoBtnAuxiliar" class="text-[10px] md:text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
+                    </button>
                 </div>
-
-                <div id="listaVisual" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-sm min-h-[250px] lg:min-h-0">
-                    <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
-                        <i class="fa-solid fa-inbox text-3xl mb-2 opacity-30"></i>
-                        <p>A sua fila aparecerá aqui após clicar em "Preparar Disparos".</p>
-                    </div>
-                </div>
-
-                <button id="btnDisparar" onclick="dispararProximo()" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-200/50 flex flex-col items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shrink-0">
-                    <span class="flex items-center gap-2 text-base md:text-lg"><i class="fa-solid fa-paper-plane"></i> Iniciar Disparos</span>
-                    <span id="textoBtnAuxiliar" class="text-[10px] md:text-xs font-normal opacity-80 mt-1">Aguardando lista...</span>
-                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO FIREBASE E AUTH
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
             authDomain: "crmpetshop.firebaseapp.com",
@@ -147,12 +166,8 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const ADMIN_EMAILS = [
-            "professoragiselle.edu2@gmail.com", 
-            "gvconecta2025@gmail.com"
-        ];
+        const ADMIN_EMAILS = ["professoragiselle.edu2@gmail.com", "gvconecta2025@gmail.com"];
 
-        // SISTEMA DE LOGIN
         auth.onAuthStateChanged((user) => {
             const loginScreen = document.getElementById('loginScreen');
             const mainApp = document.getElementById('mainApp');
@@ -164,7 +179,7 @@
                     setTimeout(() => loginScreen.classList.add('hidden'), 300);
                     mainApp.classList.remove('hidden');
                     mainApp.classList.add('flex');
-                    carregarColunasCRM(); // LER DADOS APÓS LOGIN
+                    carregarColunasCRM();
                 } else {
                     loginError.innerHTML = `⚠️ Acesso Negado.<br>O e-mail <b>${user.email}</b> não tem permissão.`;
                     loginError.classList.remove('hidden');
@@ -185,11 +200,8 @@
             });
         }
 
-        function fazerLogout() {
-            if(confirm("Deseja sair do sistema?")) auth.signOut();
-        }
+        function fazerLogout() { if(confirm("Deseja sair do sistema?")) auth.signOut(); }
 
-        // INTEGRAÇÃO CRM
         async function carregarColunasCRM() {
             try {
                 const snap = await db.collection('columns').orderBy('order').get();
@@ -224,7 +236,6 @@
             }
         }
 
-        // LÓGICA DO DISPARADOR
         let filaDeNumeros = []; let nomesAssociados = []; let indiceAtual = 0; let mensagemCodificada = "";
         const painelAcao = document.getElementById('actionSection'); const listaVisual = document.getElementById('listaVisual');
         const btnDisparar = document.getElementById('btnDisparar'); const contadorFila = document.getElementById('contadorFila');
@@ -285,7 +296,7 @@
                 btnDisparar.disabled = false; btnDisparar.classList.replace('bg-slate-800', 'bg-[#25D366]');
                 btnDisparar.innerHTML = `<span class="flex items-center gap-2 text-sm md:text-lg"><i class="fa-brands fa-whatsapp"></i> Enviar para: ${nomesAssociados[indiceAtual]}</span><span class="text-[9px] md:text-xs font-normal opacity-90 mt-1 tracking-wider">+${filaDeNumeros[indiceAtual]}</span>`;
                 const itemAtual = document.getElementById(`item-${indiceAtual}`);
-                if(itemAtual) itemAtual.classList.replace('bg-slate-50', 'bg-blue-50');
+                if(itemAtual) itemAtual.classList.replace('bg-slate-50', 'bg-indigo-50');
             } else {
                 btnDisparar.disabled = true; btnDisparar.classList.replace('bg-[#25D366]', 'bg-slate-800');
                 btnDisparar.innerHTML = `<span class="flex items-center gap-2 text-sm md:text-lg"><i class="fa-solid fa-check-double"></i> Concluído!</span><span class="text-[9px] md:text-xs font-normal opacity-80 mt-1">Todos processados.</span>`;
@@ -299,8 +310,8 @@
             window.open(`https://api.whatsapp.com/send?phone=${numeroAlvo}&text=${mensagemCodificada}`, '_blank');
             const itemLista = document.getElementById(`item-${indiceAtual}`); const icone = document.getElementById(`icon-${indiceAtual}`); const status = document.getElementById(`status-${indiceAtual}`);
             if (itemLista) {
-                itemLista.classList.replace('bg-blue-50', 'bg-green-50'); icone.classList.replace('bg-slate-200', 'bg-green-500'); icone.classList.replace('text-slate-500', 'text-white');
-                icone.innerHTML = '<i class="fa-solid fa-check"></i>'; status.innerText = "Ok"; status.classList.replace('text-slate-400', 'text-green-600');
+                itemLista.classList.replace('bg-indigo-50', 'bg-emerald-50'); icone.classList.replace('bg-slate-200', 'bg-emerald-500'); icone.classList.replace('text-slate-500', 'text-white');
+                icone.innerHTML = '<i class="fa-solid fa-check"></i>'; status.innerText = "Ok"; status.classList.replace('text-slate-400', 'text-emerald-600');
             }
             indiceAtual++;
             const proximoItem = document.getElementById(`item-${indiceAtual}`);
