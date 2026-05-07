@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CRM Pet Shops - V7.1 Secure Fix</title>
+    <title>CRM Pet Shops - V7.2 Secure</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -50,17 +50,13 @@
                 <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                     <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center w-full md:w-auto justify-between md:justify-start">
                         <span><i class="fa-solid fa-paw mr-2 text-blue-600"></i>CRM Pet Shops</span>
-                        <span class="text-[10px] font-bold bg-slate-800 text-green-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-lock mr-1"></i> Seguro V7.1</span>
+                        <span class="text-[10px] font-bold bg-slate-800 text-green-400 px-2 py-1 rounded ml-3 uppercase tracking-widest shrink-0"><i class="fa-solid fa-lock mr-1"></i> Seguro V7.2</span>
                     </h1>
                     
                     <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                         <button id="btnFilterDuplicates" onclick="toggleDuplicates()" class="hidden w-full sm:w-auto bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-bold transition-all items-center justify-center gap-2 shadow-sm whitespace-nowrap">
                             <i class="fa-solid fa-copy"></i> <span id="dupCountText">Duplicados (0)</span>
                         </button>
-
-                        <a href="https://crmpetshop.vercel.app/ficha-cadastro/index.html" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
-                            <i class="fa-regular fa-address-book"></i> Ficha de Cliente
-                        </a>
 
                         <a href="https://crmpetshop.vercel.app/disparadorcrm/index.html" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
                             <i class="fa-solid fa-paper-plane"></i> Disparador
@@ -163,7 +159,6 @@
         let colListener = null;
         let leadsListener = null;
 
-        // SISTEMA DE LOGIN: A Mágica de Segurança acontece AQUI
         auth.onAuthStateChanged((user) => {
             const loginScreen = document.getElementById('loginScreen');
             const mainApp = document.getElementById('mainApp');
@@ -171,7 +166,6 @@
 
             if (user) {
                 if (ADMIN_EMAILS.includes(user.email)) {
-                    // Se estiver autorizado: Abre o painel e INICIA a leitura do banco de dados
                     loginScreen.classList.add('opacity-0', 'pointer-events-none');
                     setTimeout(() => loginScreen.classList.add('hidden'), 300);
                     mainApp.classList.remove('hidden');
@@ -183,7 +177,6 @@
                     auth.signOut();
                 }
             } else {
-                // Se não estiver logado: Tranca tudo e PARA a leitura do banco de dados
                 loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
                 mainApp.classList.add('hidden');
                 mainApp.classList.remove('flex');
@@ -206,7 +199,7 @@
         }
 
         // ==========================================
-        // LÓGICA DO CRM (V7.1)
+        // LÓGICA DO CRM
         // ==========================================
         let columnsData = [];
         let leadsData = [];
@@ -229,15 +222,13 @@
         const boardEl = document.getElementById('kanbanBoard');
 
         function iniciarDadosCRM() {
-            if(colListener) return; // Se já tiver conectado, não repete
+            if(colListener) return; 
             
-            // Puxa as Colunas
             colListener = db.collection('columns').orderBy('order').onSnapshot(snap => {
                 columnsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderBoard();
             });
 
-            // Puxa os Leads
             leadsListener = db.collection('leads').onSnapshot(snap => {
                 leadsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 leadsData.sort((a, b) => b.createdAt - a.createdAt);
