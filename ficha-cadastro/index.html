@@ -13,23 +13,52 @@
         .salvo-sucesso { background-color: #d1fae5 !important; transition: background-color 0.5s ease; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex overflow-hidden font-sans text-gray-800 relative">
+<body class="bg-slate-50 h-screen flex overflow-hidden font-sans text-gray-800 relative">
 
     <div id="loginScreen" class="fixed inset-0 bg-slate-900/95 z-[200] flex flex-col items-center justify-center px-4 transition-opacity duration-300">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">Ficha Pro PetLojas</h1>
             <p class="text-slate-500 text-sm mb-6">Acesso restrito a administradores.</p>
-            <button id="btn-login-google" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
+            
+            <div id="loadingAuth" class="flex flex-col items-center justify-center mb-2">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                <p class="text-sm font-bold text-slate-500">A verificar sessão unificada...</p>
+            </div>
+
+            <button id="btn-login-google" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition items-center justify-center gap-3 shadow-md">
                 <i class="fa-brands fa-google text-lg"></i> Entrar com o Google
             </button>
             <p id="loginError" class="hidden mt-4 text-sm text-red-500 font-bold bg-red-50 p-3 rounded-lg border border-red-200"></p>
         </div>
     </div>
 
-    <nav class="group w-[60px] hover:w-64 bg-slate-900 flex flex-col py-6 transition-all duration-300 ease-in-out shrink-0 z-[100] h-full overflow-hidden border-r border-slate-800">
+    <div id="modal-imagem" class="fixed inset-0 bg-slate-900/60 z-[100] hidden items-center justify-center backdrop-blur-sm transition-all">
+        <div class="bg-white rounded-2xl p-6 shadow-2xl w-[400px] flex flex-col items-center relative">
+            <button id="btn-fechar-modal" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-lg font-black text-slate-800 mb-2 mt-2">Atualizar Imagem / Ler Dados</h3>
+            <p class="text-xs text-slate-500 text-center mb-6">Como deseja atualizar as informações deste lead?</p>
+            <div class="w-full border-2 border-dashed border-indigo-300 bg-indigo-50/50 rounded-xl p-6 flex flex-col items-center justify-center mb-5 transition hover:bg-indigo-50">
+                <i class="fa-solid fa-clipboard text-3xl text-indigo-500 mb-3"></i>
+                <p class="text-sm font-bold text-indigo-900 mb-1">Pressione <kbd class="bg-white border border-slate-200 text-slate-700 rounded px-1.5 shadow-sm text-xs font-mono mx-1">Ctrl + V</kbd></p>
+                <p class="text-[10px] text-indigo-600/80 text-center leading-tight mt-1">Cole um print do Google Maps aqui e a nossa<br>Inteligência Artificial (OCR) fará o cadastro.</p>
+            </div>
+            <div class="w-full flex items-center gap-3 mb-5">
+                <div class="flex-1 h-px bg-slate-200"></div>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">OU</span>
+                <div class="flex-1 h-px bg-slate-200"></div>
+            </div>
+            <button id="btn-procurar-foto" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm border border-slate-200">
+                <i class="fa-solid fa-folder-open text-slate-500"></i> Procurar imagem no PC
+            </button>
+        </div>
+    </div>
+
+    <nav class="group w-[60px] hover:w-64 bg-slate-900 flex flex-col py-6 transition-all duration-300 ease-in-out shrink-0 z-[100] h-full overflow-hidden border-r border-slate-800 absolute md:relative shadow-2xl md:shadow-none">
         <div class="flex items-center px-4 mb-8 whitespace-nowrap overflow-hidden">
             <i class="fa-solid fa-paw text-emerald-400 text-2xl min-w-[28px] text-center"></i>
             <span class="text-white font-black text-lg ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">PetLojas</span>
@@ -60,26 +89,7 @@
         </div>
     </nav>
 
-    <div id="modal-imagem" class="fixed inset-0 bg-slate-900/60 z-[100] hidden items-center justify-center backdrop-blur-sm transition-all">
-        <div class="bg-white rounded-2xl p-6 shadow-2xl w-[400px] flex flex-col items-center relative">
-            <button id="btn-fechar-modal" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-lg font-black text-slate-800 mb-2 mt-2">Atualizar Imagem / Ler Dados</h3>
-            <p class="text-xs text-slate-500 text-center mb-6">Como deseja atualizar as informações deste lead?</p>
-            <div class="w-full border-2 border-dashed border-indigo-300 bg-indigo-50/50 rounded-xl p-6 flex flex-col items-center justify-center mb-5 transition hover:bg-indigo-50">
-                <i class="fa-solid fa-clipboard text-3xl text-indigo-500 mb-3"></i>
-                <p class="text-sm font-bold text-indigo-900 mb-1">Pressione <kbd class="bg-white border border-slate-200 text-slate-700 rounded px-1.5 shadow-sm text-xs font-mono mx-1">Ctrl + V</kbd></p>
-                <p class="text-[10px] text-indigo-600/80 text-center leading-tight mt-1">Cole um print do Google Maps aqui e a nossa<br>Inteligência Artificial (OCR) fará o cadastro.</p>
-            </div>
-            <div class="w-full flex items-center gap-3 mb-5">
-                <div class="flex-1 h-px bg-slate-200"></div><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">OU</span><div class="flex-1 h-px bg-slate-200"></div>
-            </div>
-            <button id="btn-procurar-foto" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm border border-slate-200">
-                <i class="fa-solid fa-folder-open text-slate-500"></i> Procurar imagem no PC
-            </button>
-        </div>
-    </div>
-
-    <div id="view-lista" class="hidden flex-1 flex-col bg-slate-50 overflow-hidden">
+    <div id="view-lista" class="hidden flex-1 flex-col bg-slate-50 overflow-hidden pl-[60px] md:pl-0">
         <header class="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center z-10 sticky top-0">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">Diretório Prospecção</h1>
@@ -108,7 +118,7 @@
         </main>
     </div>
 
-    <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden">
+    <div id="view-detalhes" class="hidden flex-1 flex overflow-hidden pl-[60px] md:pl-0">
         <aside class="w-[450px] bg-white border-r border-gray-200 flex flex-col shrink-0 no-scrollbar overflow-y-auto relative p-6">
             <div id="aviso-salvo" class="absolute top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 transition-opacity z-50 shadow-xl">Salvo!</div>
             
@@ -215,7 +225,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, collection, onSnapshot, updateDoc, getDocs, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjuvcJvTWw7lMrIwej5lHbIUXe99lJDN4",
@@ -237,13 +247,21 @@
         let todosOsLeads = [];
         let leadAtualId = null;
 
+        // Forçar persistência
+        setPersistence(auth, browserLocalPersistence).catch(console.error);
+
         onAuthStateChanged(auth, (user) => {
             const loginScreen = document.getElementById('loginScreen');
+            const btnLogin = document.getElementById('btn-login-google');
+            const loadingAuth = document.getElementById('loadingAuth');
+
             if (user) {
                 if (ADMIN_EMAILS.includes(user.email)) {
                     loginScreen.classList.add('hidden'); 
                     init(); 
                 } else {
+                    loadingAuth.classList.add('hidden');
+                    btnLogin.classList.remove('hidden');
                     const errEl = document.getElementById('loginError');
                     errEl.innerHTML = `⚠️ Acesso Negado.<br>O e-mail <b>${user.email}</b> não tem permissão.`;
                     errEl.classList.remove('hidden');
@@ -251,6 +269,8 @@
                 }
             } else {
                 loginScreen.classList.remove('hidden'); 
+                loadingAuth.classList.add('hidden');
+                btnLogin.classList.remove('hidden');
                 document.getElementById('view-lista').classList.add('hidden');
                 document.getElementById('view-detalhes').classList.add('hidden');
             }
@@ -382,7 +402,7 @@
                 }
 
                 document.getElementById("btn-maps").onclick = () => {
-                    window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
+                    window.open(`https://www.google.com/maps/search/?api=1&query=$0{encodeURIComponent(nome + ', ' + enderecoFull + ', ' + cidadeBd)}`, '_blank');
                 };
 
                 const historico = d.history || [];
