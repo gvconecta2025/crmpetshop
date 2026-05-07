@@ -29,7 +29,13 @@
             </div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">Disparador PetLojas</h1>
             <p class="text-slate-500 text-sm mb-6">Acesso restrito a administradores.</p>
-            <button onclick="loginComGoogle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
+            
+            <div id="loadingAuth" class="flex flex-col items-center justify-center mb-2">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-3"></i>
+                <p class="text-sm font-bold text-slate-500">A verificar sessão unificada...</p>
+            </div>
+
+            <button id="btn-login-google" onclick="loginComGoogle()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition items-center justify-center gap-3 shadow-md">
                 <i class="fa-brands fa-google text-lg"></i> Entrar com o Google
             </button>
             <p id="loginError" class="hidden mt-4 text-sm text-red-500 font-bold bg-red-50 p-3 rounded-lg border border-red-200"></p>
@@ -168,10 +174,15 @@
 
         const ADMIN_EMAILS = ["professoragiselle.edu2@gmail.com", "gvconecta2025@gmail.com"];
 
+        // Forçar persistência
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
+
         auth.onAuthStateChanged((user) => {
             const loginScreen = document.getElementById('loginScreen');
             const mainApp = document.getElementById('mainApp');
             const loginError = document.getElementById('loginError');
+            const loadingAuth = document.getElementById('loadingAuth');
+            const btnLogin = document.getElementById('btn-login-google');
 
             if (user) {
                 if (ADMIN_EMAILS.includes(user.email)) {
@@ -181,6 +192,9 @@
                     mainApp.classList.add('flex');
                     carregarColunasCRM();
                 } else {
+                    loadingAuth.classList.add('hidden');
+                    btnLogin.classList.remove('hidden');
+                    btnLogin.classList.add('flex');
                     loginError.innerHTML = `⚠️ Acesso Negado.<br>O e-mail <b>${user.email}</b> não tem permissão.`;
                     loginError.classList.remove('hidden');
                     auth.signOut();
@@ -189,6 +203,9 @@
                 loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
                 mainApp.classList.add('hidden');
                 mainApp.classList.remove('flex');
+                loadingAuth.classList.add('hidden');
+                btnLogin.classList.remove('hidden');
+                btnLogin.classList.add('flex');
             }
         });
 
