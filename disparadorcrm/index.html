@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Disparador Automatizado WhatsApp - CRM PetLojas V8.2 Pro</title>
+    <title>Disparador Cadenciado WhatsApp - CRM PetLojas V8.3</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -16,8 +16,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
-        .alerta-piscar { animation: piscar 2s infinite; }
-        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .alerta-piscar { animation: piscar 2.5s infinite; }
+        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="flex flex-col h-screen bg-slate-50 relative lg:overflow-hidden">
@@ -80,11 +80,11 @@
             <div class="p-4 pb-0 shrink-0">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-bolt text-emerald-500"></i> Motor de Disparos Pro V8.2
+                        <i class="fa-solid fa-bolt text-emerald-500"></i> Disparador Cadenciado V8.3
                     </h1>
                     <div class="flex items-center gap-2 text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                        Banco de Dados Conectado
+                        Modo Humano Ativado
                     </div>
                 </div>
             </div>
@@ -96,20 +96,6 @@
                     <h2 class="text-sm font-black text-slate-700 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
                         <i class="fa-solid fa-sliders text-indigo-500"></i> Configurações do Lote
                     </h2>
-
-                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                        <label class="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5">
-                            <i class="fa-solid fa-network-wired"></i> Arquitetura de Envio
-                        </label>
-                        <select id="engineSelector" onchange="toggleEngineFields()" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold bg-white text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            <option value="native">Loop Web Nativo (Abre Abas Avançadas Sequenciais)</option>
-                            <option value="api">Gateway Back-end headLess (API Externa / Webhook)</option>
-                        </select>
-                        <div id="apiGatewayContainer" class="hidden mt-2">
-                            <input type="text" id="apiUrl" placeholder="https://sua-api-baileys.com/send" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                            <p class="text-[9px] text-slate-400 mt-1">Envia chamadas HTTP POST em background enviando JSON: { phone, message, name }</p>
-                        </div>
-                    </div>
 
                     <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 flex flex-col gap-3">
                         <div>
@@ -124,7 +110,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide mb-1"><i class="fa-solid fa-shuffle"></i> 2. Fase de Destino (Mover ao Enviar)</label>
+                            <label class="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide mb-1"><i class="fa-solid fa-shuffle"></i> 2. Fase de Destino (Mover ao Clicar Enviar)</label>
                             <select id="colunaDestinoSelect" class="w-full border border-indigo-300 rounded-lg p-2 text-xs font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Manter na mesma coluna atual --</option>
                             </select>
@@ -133,10 +119,11 @@
 
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
                         <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-1.5 flex justify-between">
-                            <span><i class="fa-solid fa-clock"></i> Delay Inteligente Protetor</span>
-                            <span id="delayDisplay" class="font-black text-amber-600">20 segundos</span>
+                            <span><i class="fa-solid fa-clock"></i> Delay Protetor (Base)</span>
+                            <span id="delayDisplay" class="font-black text-amber-600">Média: 20s</span>
                         </label>
-                        <input type="range" id="delaySegundos" min="10" max="60" value="20" oninput="document.getElementById('delayDisplay').innerText = this.value + ' segundos'" class="w-full accent-amber-500 cursor-pointer">
+                        <input type="range" id="delaySegundos" min="10" max="60" value="20" oninput="document.getElementById('delayDisplay').innerText = 'Média: ' + this.value + 's'" class="w-full accent-amber-500 cursor-pointer">
+                        <span class="text-[9px] text-amber-700 block mt-1 leading-tight">O sistema aplicará um desvio aleatório (ex: se 20s, o botão liberará entre 14s e 26s) para simular comportamento 100% humano.</span>
                     </div>
 
                     <div class="flex flex-col gap-2">
@@ -180,8 +167,8 @@
                     
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-3 mb-4">
                         <div>
-                            <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider"><i class="fa-solid fa-circle-play text-slate-400 mr-1"></i>Fila de Processamento Ativo</h2>
-                            <p class="text-[10px] text-slate-500 mt-0.5" id="engineStatusTxt">Aguardando armamento da esteira...</p>
+                            <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider"><i class="fa-solid fa-hand-pointer text-indigo-500 mr-1"></i> Execução Cadenciada</h2>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Autorização manual individual via WhatsApp Web.</p>
                         </div>
                         <div class="flex items-center gap-2 self-end sm:self-auto">
                             <span id="contadorFila" class="bg-indigo-600 text-white text-xs font-mono font-bold px-3 py-1 rounded-full shadow-inner">0 / 0</span>
@@ -191,29 +178,10 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-4 gap-2 mb-4">
-                        <div class="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
-                            <p class="text-[8px] font-bold text-slate-400 uppercase">A Enviar</p>
-                            <p id="dashPendente" class="text-base font-black text-slate-700">0</p>
-                        </div>
-                        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2 text-center shadow-sm">
-                            <p class="text-[8px] font-bold text-emerald-600 uppercase">Sucesso</p>
-                            <p id="dashSucesso" class="text-base font-black text-emerald-700">0</p>
-                        </div>
-                        <div class="bg-rose-50 border border-rose-200 rounded-xl p-2 text-center shadow-sm">
-                            <p class="text-[8px] font-bold text-rose-600 uppercase">Erros</p>
-                            <p id="dashErro" class="text-base font-black text-rose-700">0</p>
-                        </div>
-                        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-2 text-center shadow-sm">
-                            <p class="text-[8px] font-bold text-indigo-600 uppercase">Tempo Rest.</p>
-                            <p id="dashETA" class="text-base font-black text-indigo-700 font-mono">00:00</p>
-                        </div>
-                    </div>
-
-                    <div id="alertaRemetente" class="hidden bg-amber-50 border border-amber-300 p-3 rounded-xl text-xs mb-4 font-medium text-amber-800 alerta-piscar flex items-start gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-base text-amber-500 mt-0.5 shrink-0"></i>
+                    <div id="alertaInstrucao" class="hidden bg-indigo-50 border border-indigo-200 p-3 rounded-xl text-xs mb-4 font-medium text-indigo-800 flex items-start gap-2 shadow-sm">
+                        <i class="fa-solid fa-circle-info text-base text-indigo-500 mt-0.5 shrink-0"></i>
                         <div>
-                            <b>MODO NATIVO:</b> O sistema abrirá as abas sozinho no intervalo definido. Certifique-se de liberar a permissão de <b>"Pop-ups"</b> no seu navegador e clique em Enviar/Enter em cada aba do WhatsApp.
+                            <b>COMO OPERAR:</b> Clique no botão Verde. O WhatsApp Web abrirá. <b>Aperte ENTER lá para enviar.</b> Volte aqui e aguarde o botão ser liberado novamente para o próximo lead.
                         </div>
                     </div>
 
@@ -224,9 +192,9 @@
                         </div>
                     </div>
 
-                    <div class="flex gap-2 shrink-0">
-                        <button id="btnDisparar" onclick="alternarAutomacao()" class="flex-1 bg-[#25D366] hover:bg-[#1da851] text-white font-black py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 transform active:scale-[0.98]">
-                            <i id="playIcon" class="fa-solid fa-play text-lg"></i> <span id="btnTxt">Iniciar Processamento Sequencial</span>
+                    <div class="flex gap-2 shrink-0 h-16">
+                        <button id="btnDisparar" onclick="dispararContatoAtual()" class="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-black text-lg py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 transform active:scale-[0.98]">
+                            <i class="fa-brands fa-whatsapp text-2xl"></i> Iniciar Disparos
                         </button>
                     </div>
                 </div>
@@ -251,10 +219,7 @@
 
         let leadsFilaOriginal = []; 
         let indiceAtual = 0;
-        let runningAutomacao = false;
-        let timeoutRef = null;
-        let contadorSegundosETA = 0;
-        let timerETARef = null;
+        let timerLockRef = null;
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(console.error);
 
@@ -262,43 +227,34 @@
             const loginScreen = document.getElementById('loginScreen');
             const mainApp = document.getElementById('mainApp');
             const loginError = document.getElementById('loginError');
-            const loadingAuth = document.getElementById('loadingAuth');
-            const btnLogin = document.getElementById('btn-login-google');
-
+            
             if (user) {
                 if (ADMIN_EMAILS.includes(user.email)) {
-                    loginScreen.classList.add('opacity-0', 'pointer-events-none');
-                    setTimeout(() => loginScreen.classList.add('hidden'), 300);
+                    loginScreen.classList.add('hidden');
                     mainApp.classList.remove('hidden');
                     mainApp.classList.add('flex');
                     carregarColunasCRM();
                 } else {
-                    loadingAuth.classList.add('hidden');
-                    btnLogin.classList.remove('hidden');
-                    btnLogin.classList.add('flex');
+                    document.getElementById('loadingAuth').classList.add('hidden');
+                    document.getElementById('btn-login-google').classList.remove('hidden');
                     loginError.innerHTML = `⚠️ Acesso Negado.<br>O e-mail <b>${user.email}</b> não é administrador.`;
                     loginError.classList.remove('hidden');
                     auth.signOut();
                 }
             } else {
-                loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                loginScreen.classList.remove('hidden');
                 mainApp.classList.add('hidden');
                 mainApp.classList.remove('flex');
-                loadingAuth.classList.add('hidden');
-                btnLogin.classList.remove('hidden');
-                btnLogin.classList.add('flex');
-                pararFilaTotal();
+                document.getElementById('loadingAuth').classList.add('hidden');
+                document.getElementById('btn-login-google').classList.remove('hidden');
+                pararTudo();
             }
         });
 
         function loginComGoogle() { 
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => { 
-                document.getElementById('loginError').innerText = "Erro: " + error.message; 
-                document.getElementById('loginError').classList.remove('hidden'); 
-            }); 
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert("Erro: " + e.message)); 
         }
-        function fazerLogout() { if(confirm("Deseja realmente sair do sistema?")) auth.signOut(); }
+        function fazerLogout() { if(confirm("Sair do sistema?")) auth.signOut(); }
 
         async function carregarColunasCRM() {
             try {
@@ -306,31 +262,19 @@
                 const selectOrigem = document.getElementById('colunaSelect');
                 const selectDestino = document.getElementById('colunaDestinoSelect');
                 
-                if (snap.empty) { 
-                    selectOrigem.innerHTML = '<option value="">Nenhuma coluna encontrada.</option>'; 
-                    return; 
-                }
+                if (snap.empty) return;
                 
                 selectOrigem.innerHTML = '<option value="">-- Escolha a Fase de Origem --</option>';
-                selectDestino.innerHTML = '<option value="">-- Manter na mesma coluna atual --</option>';
+                selectDestino.innerHTML = '<option value="">-- Manter na mesma coluna --</option>';
                 
                 snap.forEach(doc => { 
-                    const colData = doc.data();
-                    const optionHtml = `<option value="${colData.id}">${colData.title}</option>`;
-                    selectOrigem.innerHTML += optionHtml;
-                    selectDestino.innerHTML += optionHtml;
+                    const col = doc.data();
+                    const opt = `<option value="${col.id}">${col.title}</option>`;
+                    selectOrigem.innerHTML += opt;
+                    selectDestino.innerHTML += opt;
                 });
-            } catch (error) { 
-                console.error("Erro ao ler partições: ", error); 
-            }
+            } catch (error) { console.error(error); }
         }
-
-        window.toggleEngineFields = () => {
-            const engine = document.getElementById('engineSelector').value;
-            const containerApi = document.getElementById('apiGatewayContainer');
-            if (engine === 'api') containerApi.classList.remove('hidden');
-            else containerApi.classList.add('hidden');
-        };
 
         async function importarDoCRM(event) {
             const colId = document.getElementById('colunaSelect').value;
@@ -338,8 +282,7 @@
 
             const btn = event.currentTarget;
             const textOrig = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             
             try {
                 const snap = await db.collection('leads').where('columnId', '==', colId).get();
@@ -349,11 +292,7 @@
                     const l = doc.data();
                     const cleanPhone = l.phone ? l.phone.toString().replace(/\D/g, '') : '';
                     if (cleanPhone.length >= 10) {
-                        leadsFilaOriginal.push({
-                            id: doc.id,
-                            name: l.name || l.nome || "Lojista",
-                            phone: cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone
-                        });
+                        leadsFilaOriginal.push({ id: doc.id, name: l.name || "Lojista", phone: cleanPhone.startsWith('55') ? cleanPhone : '55' + cleanPhone });
                     }
                 });
 
@@ -361,46 +300,29 @@
                     alert("Aviso: Nenhum lead com telefone nesta fase.");
                     resetarInterfaceFila();
                 } else {
-                    alert(`Sucesso! ${leadsFilaOriginal.length} Leads injetados na esteira.`);
-                    document.getElementById('listaNumeros').value = leadsFilaOriginal.map(x => `${x.name} - ${x.phone}`).join('\n');
+                    alert(`Sucesso! ${leadsFilaOriginal.length} Leads na esteira.`);
                     document.getElementById('actionSection').classList.remove('opacity-50', 'pointer-events-none');
                     prepararFila();
                 }
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao buscar registros.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = textOrig;
-            }
+            } catch (err) { alert("Erro ao buscar registros."); } 
+            finally { btn.disabled = false; btn.innerHTML = textOrig; }
         }
 
         function prepararFila() {
             if (leadsFilaOriginal.length === 0) return;
-            
             indiceAtual = 0;
-            runningAutomacao = false;
-            if (timeoutRef) clearTimeout(timeoutRef);
-            pararETATicker();
+            if (timerLockRef) clearInterval(timerLockRef);
             
-            const engine = document.getElementById('engineSelector').value;
-            if (engine === 'native') document.getElementById('alertaRemetente').classList.remove('hidden');
-            else document.getElementById('alertaRemetente').classList.add('hidden');
-            
-            document.getElementById('engineStatusTxt').innerText = "Esteira carregada. Pronto para iniciar.";
+            document.getElementById('alertaInstrucao').classList.remove('hidden');
             desenharListaVisual();
-            recalcularMetricasDashboard();
+            atualizarContadorEBotao();
         }
 
         function desenharListaVisual() {
             const container = document.getElementById('listaVisual');
             container.innerHTML = '';
-            const variantesDisponiveis = obterVariantesPreenchidas();
             
             leadsFilaOriginal.forEach((lead, idx) => {
-                const randomVisualIndex = variantesDisponiveis.length > 0 ? Math.floor(Math.random() * variantesDisponiveis.length) + 1 : 1;
-                const badgesMap = ['-', 'Alfa', 'Beta', 'Gama', 'Delta', 'Ômega'];
-                
                 const div = document.createElement('div');
                 div.id = `item-${idx}`;
                 div.className = "flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 transition-all shadow-sm";
@@ -411,7 +333,6 @@
                         <p class="font-mono text-[11px] text-slate-500 mt-0.5">+${lead.phone}</p>
                     </div>
                     <div class="text-right shrink-0">
-                        <span class="bg-indigo-50 border border-indigo-100 text-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded mr-1.5 uppercase tracking-wide">Msg: ${badgesMap[randomVisualIndex]}</span>
                         <span id="status-${idx}" class="text-[10px] font-bold text-slate-400 italic">Pendente</span>
                     </div>
                 `;
@@ -425,272 +346,123 @@
                 const val = document.getElementById(`msg${i}`).value.trim();
                 if (val !== '') arr.push(val);
             }
-            if (arr.length === 0) arr.push(document.getElementById('msg1').value.trim() || "Olá, {nome}!");
+            if (arr.length === 0) arr.push("Olá, {nome}!");
             return arr;
         }
 
-        function recalcularMetricasDashboard() {
-            const total = leadsFilaOriginal.length;
-            document.getElementById('contadorFila').innerText = `${indiceAtual} / ${total}`;
-            
-            let sucesso = 0;
-            let erro = 0;
-            let pendente = 0;
-            
-            for (let i = 0; i < total; i++) {
-                if (i < indiceAtual) {
-                    const st = document.getElementById(`status-${i}`).innerText;
-                    if (st === 'Ok' || st === 'Enviado API' || st === 'Aba Aberta') sucesso++;
-                    else erro++;
-                } else {
-                    pendente++;
-                }
-            }
-            
-            document.getElementById('dashPendente').innerText = pendente;
-            document.getElementById('dashSucesso').innerText = sucesso;
-            document.getElementById('dashErro').innerText = erro;
-            
-            if (pendente > 0) {
-                const delayConfig = parseInt(document.getElementById('delaySegundos').value);
-                contadorSegundosETA = pendente * delayConfig;
-                atualizarExibicaoETA();
-            } else {
-                document.getElementById('dashETA').innerText = "00:00";
-            }
-            
-            const btn = document.getElementById('btnDisparar');
-            const playIcon = document.getElementById('playIcon');
-            const btnTxt = document.getElementById('btnTxt');
-            
-            if (indiceAtual >= total) {
-                btn.disabled = true;
-                btn.className = "w-full bg-slate-700 text-white font-black py-3.5 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed";
-                btnTxt.innerText = "Lote Concluído com Sucesso!";
-                playIcon.className = "fa-solid fa-check-double text-emerald-400";
-                document.getElementById('engineStatusTxt').innerText = "Todos os leads processados.";
-                runningAutomacao = false;
-                pararETATicker();
-            } else {
-                btn.disabled = false;
-                if (runningAutomacao) {
-                    btn.className = "w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2";
-                    btnTxt.innerText = "Pausar Automação em Lote";
-                    playIcon.className = "fa-solid fa-pause animate-spin";
-                } else {
-                    btn.className = "w-full bg-[#25D366] hover:bg-[#1da851] text-white font-black py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2";
-                    btnTxt.innerText = "Iniciar Processamento Sequencial";
-                    playIcon.className = "fa-solid fa-play text-lg";
-                }
-            }
-        }
+        // MOTOR DE EXECUÇÃO MANUAL CADASTRADA (HUMAN-IN-THE-LOOP)
+        async function dispararContatoAtual() {
+            if (indiceAtual >= leadsFilaOriginal.length) return;
 
-        function atualizarExibicaoETA() {
-            const min = Math.floor(contadorSegundosETA / 60);
-            const seg = contadorSegundosETA % 60;
-            document.getElementById('dashETA').innerText = `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
-        }
-
-        function iniciarETATicker() {
-            if (timerETARef) clearInterval(timerETARef);
-            timerETARef = setInterval(() => {
-                if (contadorSegundosETA > 0 && runningAutomacao) {
-                    contadorSegundosETA--;
-                    atualizarExibicaoETA();
-                }
-            }, 1000);
-        }
-
-        function pararETATicker() {
-            if (timerETARef) { clearInterval(timerETARef); timerETARef = null; }
-        }
-
-        function alternarAutomacao() {
-            if (leadsFilaOriginal.length === 0) { alert("Arme a esteira antes de rodar."); return; }
-            
-            runningAutomacao = !runningAutomacao;
-            if (runningAutomacao) {
-                iniciarETATicker();
-                processarProximoLeadDaFila();
-            } else {
-                if (timeoutRef) clearTimeout(timeoutRef);
-                pararETATicker();
-                document.getElementById('engineStatusTxt').innerText = "Automação pausada.";
-                recalcularMetricasDashboard();
-            }
-        }
-
-        // MOTOR PRINCIPAL REPARADO CONTRA CONCORRÊNCIA ASSÍNCRONA (RACE CONDITION BLINDADO)
-        async function processarProximoLeadDaFila() {
-            if (!runningAutomacao) return;
-            const total = leadsFilaOriginal.length;
-            if (indiceAtual >= total) {
-                recalcularMetricasDashboard();
-                return;
-            }
-
-            // CORREÇÃO CRÍTICA: CAPTURA O ÍNDICE IMEDIATAMENTE E INCREMENTA SÍNCRONAMENTE O PONTEIRO GLOBAL
-            const idxProcessamento = indiceAtual;
-            indiceAtual++; 
-
-            const currentLead = leadsFilaOriginal[idxProcessamento];
-            const engine = document.getElementById('engineSelector').value;
+            const btnDisparar = document.getElementById('btnDisparar');
+            const leadAtual = leadsFilaOriginal[indiceAtual];
             const targetColumnId = document.getElementById('colunaDestinoSelect').value;
-            const delayConfig = parseInt(document.getElementById('delaySegundos').value);
             
-            document.getElementById('engineStatusTxt').innerText = `Processando item ${idxProcessamento + 1} de ${total}: ${currentLead.name}...`;
-            
-            // Sorteio e personalização da mensagem
+            // 1. SORTEIO ALEATÓRIO DA MENSAGEM E REPLACE
             const templates = obterVariantesPreenchidas();
             const randomIndex = Math.floor(Math.random() * templates.length);
             const templateEscolhido = templates[randomIndex];
-            const msgPersonalizada = templateEscolhido.replace(/{nome}/g, currentLead.name);
-            
+            const msgPersonalizada = templateEscolhido.replace(/{nome}/g, leadAtual.name);
             const labelsMap = ['Alfa', 'Beta', 'Gama', 'Delta', 'Ômega'];
-            const labelUtilizada = labelsMap[randomIndex] || 'Customizada';
+            const labelUtilizada = labelsMap[randomIndex] || 'Custom';
 
-            // Elementos visuais travados no index estático local imutável
-            const rowElement = document.getElementById(`item-${idxProcessamento}`);
-            const iconElement = document.getElementById(`icon-${idxProcessamento}`);
-            const statusElement = document.getElementById(`status-${idxProcessamento}`);
+            // 2. ABRIR ABA DO WHATSAPP (Ação Física do Usuário)
+            const waUrl = `https://api.whatsapp.com/send?phone=${leadAtual.phone}&text=${encodeURIComponent(msgPersonalizada)}`;
+            window.open(waUrl, '_blank');
 
-            if (rowElement) rowElement.classList.replace('bg-slate-50', 'bg-indigo-50/50');
-
-            let disparoRealizadoComSucesso = false;
-
-            // EXIGÊNCIA 1: EXTRAÇÃO DA DATA, HORA E TEXTO COMPLETO FORMATADO PARA A NOTA
-            const agora = new Date();
-            const dataNormal = agora.toLocaleDateString('pt-BR');
-            const horaNormal = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            const logTextoCompleto = `📱 Mensagem de prospecção enviada via disparador automatizado em ${dataNormal} às ${horaNormal} (Variação ${labelUtilizada}):\n\n"${msgPersonalizada}"`;
-
-            // Execução do Disparo
-            if (engine === 'native') {
-                try {
-                    const encodedText = encodeURIComponent(msgPersonalizada);
-                    const waUrl = `https://api.whatsapp.com/send?phone=${currentLead.phone}&text=${encodedText}`;
-                    
-                    // Abre a aba de forma nativa e isolada
-                    window.open(waUrl, '_blank');
-                    
-                    if (statusElement) {
-                        statusElement.innerText = "Aba Aberta";
-                        statusElement.className = "text-[10px] font-bold text-emerald-600";
-                    }
-                    if (iconElement) {
-                        iconElement.className = "w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0";
-                        iconElement.innerHTML = '<i class="fa-solid fa-check"></i>';
-                    }
-                    disparoRealizadoComSucesso = true;
-                } catch (errNative) {
-                    console.error(errNative);
-                    marcarErroInterface(statusElement, iconElement);
-                }
-            } else {
-                // Modo API
-                const gatewayUrl = document.getElementById('apiUrl').value.trim();
-                if (!gatewayUrl) {
-                    alert("Erro: Endereço da API em branco!");
-                    runningAutomacao = false;
-                    indiceAtual = idxProcessamento; // Desfaz o avanço caso falte config
-                    recalcularMetricasDashboard();
-                    return;
-                }
-
-                try {
-                    const response = await fetch(gatewayUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            phone: currentLead.phone,
-                            message: msgPersonalizada,
-                            name: currentLead.name,
-                            variant: labelUtilizada
-                        })
-                    });
-
-                    if (response.ok) {
-                        if (statusElement) {
-                            statusElement.innerText = "Enviado API";
-                            statusElement.className = "text-[10px] font-bold text-blue-600";
-                        }
-                        if (iconElement) {
-                            iconElement.className = "w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0";
-                            iconElement.innerHTML = '<i class="fa-solid fa-cloud"></i>';
-                        }
-                        disparoRealizadoComSucesso = true;
-                    } else {
-                        marcarErroInterface(statusElement, iconElement);
-                    }
-                } catch (errApi) {
-                    console.error(errApi);
-                    marcarErroInterface(statusElement, iconElement);
-                }
-            }
-
-            // Sincronização e gravação na Nuvem (Aguardará em segundo plano sem travar a fila)
-            if (disparoRealizadoComSucesso) {
-                try {
-                    const batchUpdate = {};
-                    if (targetColumnId && targetColumnId !== '') {
-                        batchUpdate.columnId = targetColumnId;
-                    }
-                    batchUpdate.history = firebase.firestore.FieldValue.arrayUnion({
-                        text: logTextoCompleto,
+            // 3. REGISTRAR HISTÓRICO E MOVER COLUNA NO FIREBASE (No momento do clique)
+            try {
+                const agora = new Date();
+                const logTxt = `📱 Mensagem de prospecção gerada e direcionada p/ WhatsApp Web em ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (Variação ${labelUtilizada}):\n\n"${msgPersonalizada}"`;
+                
+                const batchUpdate = {
+                    history: firebase.firestore.FieldValue.arrayUnion({
+                        text: logTxt,
                         createdAt: Date.now()
-                    });
+                    })
+                };
+                if (targetColumnId && targetColumnId !== '') batchUpdate.columnId = targetColumnId;
+                
+                db.collection('leads').doc(leadAtual.id).update(batchUpdate);
+            } catch (e) { console.error("Erro ao salvar histórico:", e); }
 
-                    await db.collection('leads').doc(currentLead.id).update(batchUpdate);
-                } catch (firestoreErr) {
-                    console.error("Erro firestore: ", firestoreErr);
-                }
+            // 4. ATUALIZAR UI DO ITEM ATUAL (Deixar Verde)
+            const rowEl = document.getElementById(`item-${indiceAtual}`);
+            const iconEl = document.getElementById(`icon-${indiceAtual}`);
+            const statusEl = document.getElementById(`status-${indiceAtual}`);
+            if (rowEl) {
+                rowEl.classList.replace('bg-slate-50', 'bg-emerald-50');
+                iconEl.className = "w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0";
+                iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+                statusEl.innerText = "Aba Aberta";
+                statusEl.className = "text-[10px] font-bold text-emerald-600";
             }
 
-            recalcularMetricasDashboard();
+            // 5. INCREMENTAR ÍNDICE E TRAVAR O BOTÃO COM DELAY RANDOMIZADO
+            indiceAtual++;
+            
+            if (indiceAtual < leadsFilaOriginal.length) {
+                // Cálculo de delay aleatório para despistar o WhatsApp
+                const delayBase = parseInt(document.getElementById('delaySegundos').value);
+                // Exemplo: 20s base. min=14s, max=26s
+                let minDelay = Math.ceil(delayBase * 0.7);
+                let maxDelay = Math.ceil(delayBase * 1.3);
+                let delayReal = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+                if(delayReal < 5) delayReal = 5; // Proteção mínima absoluta
 
-            // Agenda o próximo ciclo de forma linear e controlada
-            if (runningAutomacao && indiceAtual < total) {
-                document.getElementById('engineStatusTxt').innerText = `Aguardando pausa de segurança ativa por ${delayConfig}s antes do próximo envio...`;
-                timeoutRef = setTimeout(() => {
-                    processarProximoLeadDaFila();
-                }, delayConfig * 1000);
+                // Scroll para o próximo
+                const proxRow = document.getElementById(`item-${indiceAtual}`);
+                if(proxRow) proxRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Travar Botão UI
+                btnDisparar.disabled = true;
+                btnDisparar.className = "w-full bg-slate-300 text-slate-600 font-black text-lg py-3 rounded-xl shadow-inner flex items-center justify-center gap-2 cursor-not-allowed transition-all";
+                
+                timerLockRef = setInterval(() => {
+                    delayReal--;
+                    btnDisparar.innerHTML = `<i class="fa-solid fa-hourglass-half animate-pulse"></i> Aguarde ${delayReal}s...`;
+                    
+                    if (delayReal <= 0) {
+                        clearInterval(timerLockRef);
+                        atualizarContadorEBotao(); // Libera o botão verde para o próximo clique
+                    }
+                }, 1000);
+            } else {
+                atualizarContadorEBotao(); // Fim da fila
             }
         }
 
-        function marcarErroInterface(statusEl, iconEl) {
-            if (statusEl) {
-                statusEl.innerText = "Falha";
-                statusEl.className = "text-[10px] font-bold text-rose-600";
-            }
-            if (iconEl) {
-                iconEl.className = "w-6 h-6 rounded-full bg-rose-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0";
-                iconEl.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        function atualizarContadorEBotao() {
+            document.getElementById('contadorFila').innerText = `${indiceAtual} / ${leadsFilaOriginal.length}`;
+            const btn = document.getElementById('btnDisparar');
+            
+            if (indiceAtual >= leadsFilaOriginal.length) {
+                btn.disabled = true;
+                btn.className = "w-full bg-slate-700 text-white font-black text-lg py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed";
+                btn.innerHTML = `<i class="fa-solid fa-check-double text-emerald-400"></i> Lote Concluído!`;
+            } else {
+                btn.disabled = false;
+                btn.className = "w-full bg-[#25D366] hover:bg-[#1da851] text-white font-black text-lg py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition-all";
+                const proxNome = leadsFilaOriginal[indiceAtual].name;
+                btn.innerHTML = `<i class="fa-brands fa-whatsapp text-2xl"></i> Enviar p/ ${proxNome}`;
             }
         }
 
-        function pararFilaTotal() {
-            runningAutomacao = false;
-            if (timeoutRef) clearTimeout(timeoutRef);
-            pararETATicker();
+        function pararTudo() {
+            if (timerLockRef) clearInterval(timerLockRef);
             leadsFilaOriginal = [];
             indiceAtual = 0;
         }
 
         function resetarInterfaceFila() {
-            pararFilaTotal();
-            document.getElementById('listaVisual').innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4">
-                    <i class="fa-solid fa-inbox text-4xl mb-2 opacity-30"></i>
-                    <p class="font-bold text-slate-500 text-xs">Aguardando Preparação...</p>
-                </div>
-            `;
+            pararTudo();
+            document.getElementById('listaVisual').innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm text-center px-4"><i class="fa-solid fa-inbox text-4xl mb-2 opacity-30"></i><p class="font-bold text-slate-500 text-xs">Aguardando Preparação...</p></div>`;
             document.getElementById('actionSection').classList.add('opacity-50', 'pointer-events-none');
-            document.getElementById('alertaRemetente').classList.add('hidden');
-            recalcularMetricasDashboard();
+            document.getElementById('alertaInstrucao').classList.add('hidden');
         }
 
         window.resetarTudo = () => {
-            if (confirm("Deseja realmente redefinir a esteira?")) {
+            if (confirm("Deseja redefinir a esteira?")) {
                 document.getElementById('colunaSelect').value = "";
                 document.getElementById('colunaDestinoSelect').value = "";
                 resetarInterfaceFila();
