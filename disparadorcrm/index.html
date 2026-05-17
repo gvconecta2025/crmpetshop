@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Disparador Cadenciado WhatsApp - CRM PetLojas V8.3</title>
+    <title>Disparador Cadenciado WhatsApp - CRM PetLojas V8.4</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -80,11 +80,11 @@
             <div class="p-4 pb-0 shrink-0">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-bolt text-emerald-500"></i> Disparador Cadenciado V8.3
+                        <i class="fa-solid fa-bolt text-emerald-500"></i> Disparador Cadenciado V8.4
                     </h1>
                     <div class="flex items-center gap-2 text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                        Modo Humano Ativado
+                        Confirmação Ativa On
                     </div>
                 </div>
             </div>
@@ -110,7 +110,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide mb-1"><i class="fa-solid fa-shuffle"></i> 2. Fase de Destino (Mover ao Clicar Enviar)</label>
+                            <label class="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide mb-1"><i class="fa-solid fa-shuffle"></i> 2. Fase de Destino (Ao Confirmar)</label>
                             <select id="colunaDestinoSelect" class="w-full border border-indigo-300 rounded-lg p-2 text-xs font-bold bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Manter na mesma coluna atual --</option>
                             </select>
@@ -123,7 +123,7 @@
                             <span id="delayDisplay" class="font-black text-amber-600">Média: 20s</span>
                         </label>
                         <input type="range" id="delaySegundos" min="10" max="60" value="20" oninput="document.getElementById('delayDisplay').innerText = 'Média: ' + this.value + 's'" class="w-full accent-amber-500 cursor-pointer">
-                        <span class="text-[9px] text-amber-700 block mt-1 leading-tight">O sistema aplicará um desvio aleatório (ex: se 20s, o botão liberará entre 14s e 26s) para simular comportamento 100% humano.</span>
+                        <span class="text-[9px] text-amber-700 block mt-1 leading-tight">O timer só começará a rodar <b>após</b> você clicar em "Confirmar Envio" no card. O tempo será aleatório com base na média.</span>
                     </div>
 
                     <div class="flex flex-col gap-2">
@@ -168,7 +168,7 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-3 mb-4">
                         <div>
                             <h2 class="text-sm font-black text-slate-800 uppercase tracking-wider"><i class="fa-solid fa-hand-pointer text-indigo-500 mr-1"></i> Execução Cadenciada</h2>
-                            <p class="text-[10px] text-slate-500 mt-0.5">Autorização manual individual via WhatsApp Web.</p>
+                            <p class="text-[10px] text-slate-500 mt-0.5">O CRM só atualiza após a sua confirmação visual.</p>
                         </div>
                         <div class="flex items-center gap-2 self-end sm:self-auto">
                             <span id="contadorFila" class="bg-indigo-600 text-white text-xs font-mono font-bold px-3 py-1 rounded-full shadow-inner">0 / 0</span>
@@ -181,7 +181,7 @@
                     <div id="alertaInstrucao" class="hidden bg-indigo-50 border border-indigo-200 p-3 rounded-xl text-xs mb-4 font-medium text-indigo-800 flex items-start gap-2 shadow-sm">
                         <i class="fa-solid fa-circle-info text-base text-indigo-500 mt-0.5 shrink-0"></i>
                         <div>
-                            <b>COMO OPERAR:</b> Clique no botão Verde. O WhatsApp Web abrirá. <b>Aperte ENTER lá para enviar.</b> Volte aqui e aguarde o botão ser liberado novamente para o próximo lead.
+                            <b>COMO OPERAR:</b> 1. Clique no Botão Verde Gigante. 2. A aba abrirá. Aperte ENTER no WhatsApp. 3. Volte aqui e clique em <b>"Confirmar Envio"</b> no cartão do cliente.
                         </div>
                     </div>
 
@@ -332,8 +332,11 @@
                         <p class="font-bold text-slate-800 truncate text-xs">${lead.name}</p>
                         <p class="font-mono text-[11px] text-slate-500 mt-0.5">+${lead.phone}</p>
                     </div>
-                    <div class="text-right shrink-0">
-                        <span id="status-${idx}" class="text-[10px] font-bold text-slate-400 italic">Pendente</span>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1.5">
+                        <div>
+                            <span id="status-${idx}" class="text-[10px] font-bold text-slate-400 italic">Pendente</span>
+                        </div>
+                        <button id="btn-confirmar-${idx}" onclick="confirmarEnvio(${idx})" class="hidden bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all transform active:scale-95"><i class="fa-solid fa-check-double mr-1"></i>Confirmar Envio</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -350,15 +353,14 @@
             return arr;
         }
 
-        // MOTOR DE EXECUÇÃO MANUAL CADASTRADA (HUMAN-IN-THE-LOOP)
-        async function dispararContatoAtual() {
+        // ETAPA 1: APENAS ABRE A ABA DO WHATSAPP (NÃO SALVA NO BANCO)
+        function dispararContatoAtual() {
             if (indiceAtual >= leadsFilaOriginal.length) return;
 
             const btnDisparar = document.getElementById('btnDisparar');
             const leadAtual = leadsFilaOriginal[indiceAtual];
-            const targetColumnId = document.getElementById('colunaDestinoSelect').value;
             
-            // 1. SORTEIO ALEATÓRIO DA MENSAGEM E REPLACE
+            // 1. SORTEIO ALEATÓRIO DA MENSAGEM
             const templates = obterVariantesPreenchidas();
             const randomIndex = Math.floor(Math.random() * templates.length);
             const templateEscolhido = templates[randomIndex];
@@ -366,14 +368,47 @@
             const labelsMap = ['Alfa', 'Beta', 'Gama', 'Delta', 'Ômega'];
             const labelUtilizada = labelsMap[randomIndex] || 'Custom';
 
-            // 2. ABRIR ABA DO WHATSAPP (Ação Física do Usuário)
+            // Armazena a mensagem gerada para usar na hora de confirmar e salvar no banco
+            leadAtual.msgGerada = msgPersonalizada;
+            leadAtual.labelGerada = labelUtilizada;
+
+            // 2. ABRIR ABA DO WHATSAPP
             const waUrl = `https://api.whatsapp.com/send?phone=${leadAtual.phone}&text=${encodeURIComponent(msgPersonalizada)}`;
             window.open(waUrl, '_blank');
 
-            // 3. REGISTRAR HISTÓRICO E MOVER COLUNA NO FIREBASE (No momento do clique)
+            // 3. ATUALIZAR INTERFACE PARA EXIBIR O BOTÃO DE CONFIRMAÇÃO
+            const rowEl = document.getElementById(`item-${indiceAtual}`);
+            const statusEl = document.getElementById(`status-${indiceAtual}`);
+            const btnConfirmar = document.getElementById(`btn-confirmar-${indiceAtual}`);
+
+            if (rowEl) rowEl.classList.replace('bg-slate-50', 'bg-indigo-50');
+            if (statusEl) {
+                statusEl.innerText = "Aba Aberta - Confirme 👉";
+                statusEl.className = "text-[10px] font-bold text-indigo-600";
+            }
+            if (btnConfirmar) btnConfirmar.classList.remove('hidden');
+
+            // 4. TRAVAR O BOTÃO PRINCIPAL ENQUANTO NÃO CONFIRMAR
+            btnDisparar.disabled = true;
+            btnDisparar.className = "w-full bg-slate-200 text-slate-500 font-black text-lg py-3 rounded-xl shadow-inner flex items-center justify-center gap-2 cursor-not-allowed transition-all";
+            btnDisparar.innerHTML = `<i class="fa-solid fa-hand text-xl"></i> Confirme o envio no botão acima`;
+        }
+
+        // ETAPA 2: CONFIRMAÇÃO, SALVAMENTO NO CRM E INÍCIO DO DELAY
+        async function confirmarEnvio(idx) {
+            if (idx !== indiceAtual) return; // Trava de segurança
+            
+            const btnConfirmar = document.getElementById(`btn-confirmar-${idx}`);
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            const leadAtual = leadsFilaOriginal[idx];
+            const targetColumnId = document.getElementById('colunaDestinoSelect').value;
+
+            // 1. REGISTRAR HISTÓRICO E MOVER COLUNA NO FIREBASE
             try {
                 const agora = new Date();
-                const logTxt = `📱 Mensagem de prospecção gerada e direcionada p/ WhatsApp Web em ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (Variação ${labelUtilizada}):\n\n"${msgPersonalizada}"`;
+                const logTxt = `📱 Mensagem enviada pelo Disparador em ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (Variação ${leadAtual.labelGerada}):\n\n"${leadAtual.msgGerada}"`;
                 
                 const batchUpdate = {
                     history: firebase.firestore.FieldValue.arrayUnion({
@@ -383,38 +418,45 @@
                 };
                 if (targetColumnId && targetColumnId !== '') batchUpdate.columnId = targetColumnId;
                 
-                db.collection('leads').doc(leadAtual.id).update(batchUpdate);
-            } catch (e) { console.error("Erro ao salvar histórico:", e); }
+                await db.collection('leads').doc(leadAtual.id).update(batchUpdate);
+            } catch (e) { 
+                console.error("Erro ao salvar histórico:", e); 
+            }
 
-            // 4. ATUALIZAR UI DO ITEM ATUAL (Deixar Verde)
-            const rowEl = document.getElementById(`item-${indiceAtual}`);
-            const iconEl = document.getElementById(`icon-${indiceAtual}`);
-            const statusEl = document.getElementById(`status-${indiceAtual}`);
-            if (rowEl) {
-                rowEl.classList.replace('bg-slate-50', 'bg-emerald-50');
+            // 2. ATUALIZAR UI DO ITEM ATUAL (Deixar Verde)
+            const rowEl = document.getElementById(`item-${idx}`);
+            const iconEl = document.getElementById(`icon-${idx}`);
+            const statusEl = document.getElementById(`status-${idx}`);
+            
+            btnConfirmar.classList.add('hidden'); // Esconde o botão após sucesso
+            if (rowEl) rowEl.classList.replace('bg-indigo-50', 'bg-emerald-50');
+            if (iconEl) {
                 iconEl.className = "w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0";
                 iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
-                statusEl.innerText = "Aba Aberta";
+            }
+            if (statusEl) {
+                statusEl.innerText = "Confirmado";
                 statusEl.className = "text-[10px] font-bold text-emerald-600";
             }
 
-            // 5. INCREMENTAR ÍNDICE E TRAVAR O BOTÃO COM DELAY RANDOMIZADO
+            // 3. INCREMENTAR ÍNDICE E INICIAR O TIMER DE DELAY RANDOMIZADO
             indiceAtual++;
             
+            const btnDisparar = document.getElementById('btnDisparar');
+
             if (indiceAtual < leadsFilaOriginal.length) {
                 // Cálculo de delay aleatório para despistar o WhatsApp
                 const delayBase = parseInt(document.getElementById('delaySegundos').value);
-                // Exemplo: 20s base. min=14s, max=26s
                 let minDelay = Math.ceil(delayBase * 0.7);
                 let maxDelay = Math.ceil(delayBase * 1.3);
                 let delayReal = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-                if(delayReal < 5) delayReal = 5; // Proteção mínima absoluta
+                if(delayReal < 5) delayReal = 5; // Mínimo absoluto
 
-                // Scroll para o próximo
+                // Scroll suave para o próximo lead
                 const proxRow = document.getElementById(`item-${indiceAtual}`);
                 if(proxRow) proxRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                // Travar Botão UI
+                // Inicia a contagem no botão principal
                 btnDisparar.disabled = true;
                 btnDisparar.className = "w-full bg-slate-300 text-slate-600 font-black text-lg py-3 rounded-xl shadow-inner flex items-center justify-center gap-2 cursor-not-allowed transition-all";
                 
@@ -424,7 +466,7 @@
                     
                     if (delayReal <= 0) {
                         clearInterval(timerLockRef);
-                        atualizarContadorEBotao(); // Libera o botão verde para o próximo clique
+                        atualizarContadorEBotao(); // Libera o botão verde
                     }
                 }, 1000);
             } else {
